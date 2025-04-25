@@ -14,10 +14,8 @@ export default function Welcome({
     phpVersion,
 }: PageProps<{ laravelVersion: string; phpVersion: string }>) {
     const [ua, setUa] = useState<JsSIP.UA | null>(null);
-    const [destination, setDestination] = useState<string>("");
     const [currentSession, setCurrentSession] =
         useState<JsSIP.RTCSession | null>(null);
-    const [isRegistered, setIsRegistered] = useState<boolean>(false);
     const [callStatus, setCallStatus] = useState<string>("Idle");
 
     useEffect(() => {
@@ -28,7 +26,7 @@ export default function Welcome({
             user_agent: "RendellUser",
         };
 
-        const userAgent = createSipUA(config, setCallStatus, setCurrentSession);
+        const userAgent = createSipUA(config, setCurrentSession, setCallStatus);
         setUa(userAgent);
 
         // Cleanup on unmount
@@ -58,7 +56,6 @@ export default function Welcome({
 
         console.log("session", session);
 
-    
         session.on("sending", function (e: any) {
             console.log("sending", e);
             setCallStatus("Calling");

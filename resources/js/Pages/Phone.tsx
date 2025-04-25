@@ -1,6 +1,5 @@
 import { PageProps } from "@/types";
 import { Head } from "@inertiajs/react";
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 import {
@@ -11,45 +10,22 @@ import {
     Pause,
     Play,
     UserPlus,
-    Moon,
-    Sun,
 } from "lucide-react";
 import { NextLayout } from "@/Layouts/NextLayout";
+import ThemeToggle from "@/Components/ThemeToggle";
+import JsSIP from "jssip";
+import { createSipUA } from "@/utils";
+import { call } from "@/uitls/phone";
 
-export function ThemeToggle() {
-    const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
-
-    // Only show the toggle after component mounts to avoid hydration mismatch
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    if (!mounted) {
-        return <div className="w-9 h-9"></div>; // Placeholder to prevent layout shift
-    }
-
-    return (
-        <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="p-2 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Toggle theme"
-        >
-            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-    );
-}
-
-export default function Welcome({
-    auth,
-    laravelVersion,
-    phpVersion,
-}: PageProps<{ laravelVersion: string; phpVersion: string }>) {
+export default function Welcome({}: PageProps<{}>) {
     const [isActiveCall, setIsActiveCall] = useState(false);
     const [destination, setDestination] = useState("");
     const [isMuted, setIsMuted] = useState(false);
     const [isOnHold, setIsOnHold] = useState(false);
     const [callDuration, setCallDuration] = useState(0);
+    const [ua, setUa] = useState<JsSIP.UA | null>(null);
+    const [currentSession, setCurrentSession] =
+        useState<JsSIP.RTCSession | null>(null);
 
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
@@ -67,6 +43,23 @@ export default function Welcome({
         };
     }, [isActiveCall]);
 
+    useEffect(() => {
+        const config = {
+            uri: "sip:1030wp@switchboard.developer.uc",
+            password: "qf1R4XtJe93OKXjh",
+            wsServers: "wss://core1-atl.ucsandbox.net:9002",
+            user_agent: "RendellUser",
+        };
+
+        const userAgent = createSipUA(config, setCurrentSession);
+        setUa(userAgent);
+
+        // Cleanup on unmount
+        return () => {
+            userAgent.stop();
+        };
+    }, []);
+
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
@@ -76,22 +69,59 @@ export default function Welcome({
     };
 
     const handleCall = () => {
-        if (destination.trim()) {
-            setIsActiveCall(true);
+        if (!destination.trim()) {
+            console.log("Destination not set");
+            return;
         }
+
+        if (!ua) {
+            console.log("UA not initialized");
+            return;
+        }
+
+        const destinationSIP = `sip:${destination.trim()}@switchboard.developer.uc`;
+        console.log("destinationSIP", destinationSIP);
+
+        call(ua, destinationSIP, setCurrentSession, setIsActiveCall);
     };
 
     const handleEndCall = () => {
+        if (currentSession) {
+            currentSession.terminate();
+        }
         setIsActiveCall(false);
         setIsMuted(false);
         setIsOnHold(false);
     };
 
     const toggleMute = () => {
+        if (!currentSession) {
+            return;
+        }
+        var isMuted = currentSession.isMuted()?.audio;
+
+        console.log("isMuted", isMuted);
+
+        isMuted ? currentSession.unmute() : currentSession.mute();
+
         setIsMuted(!isMuted);
     };
 
     const toggleHold = () => {
+        if (!currentSession) {
+            return;
+        }
+
+        var isOnhold = currentSession.isOnHold();
+
+        isOnhold?.local
+            ? currentSession.unhold({}, () => {
+                  console.log("unholded!");
+              })
+            : currentSession.hold({}, () => {
+                  console.log("holded!");
+              });
+
         setIsOnHold(!isOnHold);
     };
 

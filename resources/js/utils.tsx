@@ -8,8 +8,8 @@ export function createSipUA(
         wsServers: string;
         user_agent: string;
     },
-    setCallStatus: (status: string) => void,
-    setCurrentSession: (session: JsSIP.RTCSession | null) => void
+    setCurrentSession: (session: JsSIP.RTCSession | null) => void,
+    setCallStatus?: (status: string) => void
 ) {
     const socket = new JsSIP.WebSocketInterface(config.wsServers);
 
@@ -43,32 +43,32 @@ export function createSipUA(
         const session = e.session;
         if (e.originator === "remote") {
             console.log("Incoming call...");
-            setCallStatus("Incoming");
+            // setCallStatus("Incoming");
 
             // Event when the call ends
             session.on("terminated", () => {
-                setCallStatus("Ended");
+                // setCallStatus("Ended");
                 setCurrentSession(null);
             });
 
             session.on("progress", function () {
                 console.log("Call is in progress...");
-                setCallStatus("Incoming");
+                // setCallStatus("Incoming");
             });
 
             session.on("accepted", () => {
                 console.log("Call accepted!");
-                setCallStatus("In Call");
+                // setCallStatus("In Call");
             });
 
             session.on("failed", function (e: any) {
                 console.log("call failed", e);
-                setCallStatus("Call Failed");
+                // setCallStatus("Call Failed");
             });
 
             session.on("ended", () => {
                 console.log("Call ended!");
-                setCallStatus("Call Ended");
+                // setCallStatus("Call Ended");
             });
 
             setCurrentSession(session);
