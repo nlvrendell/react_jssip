@@ -8,6 +8,9 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Test');
 });
+Route::get('/phone', function () {
+    return Inertia::render('Phone');
+});
 
 // Route::get('/', function () {
 //     return Inertia::render('Welcome', [
