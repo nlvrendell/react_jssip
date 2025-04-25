@@ -6,7 +6,15 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Phone');
+    return Inertia::render('Phone', [
+        'config' => [
+            'uri' => config('connectware.uri'),
+            'password' => config('connectware.password'),
+            'domain' => config('connectware.domain'),
+            'server' => config('connectware.server'),
+            'user_agent' => config('connectware.user_agent'),
+        ],
+    ]);
 });
 // Route::get('/', function () {
 //     return Inertia::render('Welcome', [

@@ -1,5 +1,5 @@
 import { PageProps } from "@/types";
-import { Head } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 
 import {
@@ -17,7 +17,7 @@ import JsSIP from "jssip";
 import { createSipUA } from "@/utils";
 import { call } from "@/uitls/phone";
 
-export default function Welcome({}: PageProps<{}>) {
+export default function WebPhone() {
     const [isActiveCall, setIsActiveCall] = useState(false);
     const [destination, setDestination] = useState("");
     const [isMuted, setIsMuted] = useState(false);
@@ -26,6 +26,14 @@ export default function Welcome({}: PageProps<{}>) {
     const [ua, setUa] = useState<JsSIP.UA | null>(null);
     const [currentSession, setCurrentSession] =
         useState<JsSIP.RTCSession | null>(null);
+
+    const config = usePage().props.config as {
+        domain: string;
+        uri: string;
+        password: string;
+        server: string;
+        user_agent: string;
+    };
 
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
@@ -43,15 +51,16 @@ export default function Welcome({}: PageProps<{}>) {
         };
     }, [isActiveCall]);
 
+    // separate useEffect for jssip cause isActive refresh the session everytime it updates
     useEffect(() => {
-        const config = {
-            uri: "sip:1030wp@switchboard.developer.uc",
-            password: "qf1R4XtJe93OKXjh",
-            wsServers: "wss://core1-atl.ucsandbox.net:9002",
-            user_agent: "RendellUser",
+        const uaConfig = {
+            uri: config.uri,
+            password: config.password,
+            wsServers: config.server,
+            user_agent: config.user_agent,
         };
 
-        const userAgent = createSipUA(config, setCurrentSession);
+        const userAgent = createSipUA(uaConfig, setCurrentSession);
         setUa(userAgent);
 
         // Cleanup on unmount
@@ -79,8 +88,7 @@ export default function Welcome({}: PageProps<{}>) {
             return;
         }
 
-        const destinationSIP = `sip:${destination.trim()}@switchboard.developer.uc`;
-        console.log("destinationSIP", destinationSIP);
+        const destinationSIP = `sip:${destination.trim()}@${config.domain}`;
 
         call(ua, destinationSIP, setCurrentSession, setIsActiveCall);
     };
