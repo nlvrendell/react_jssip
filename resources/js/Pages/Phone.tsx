@@ -10,6 +10,8 @@ import {
     Pause,
     Play,
     UserPlus,
+    PhoneForwarded,
+    WifiOff,
 } from "lucide-react";
 import { NextLayout } from "@/Layouts/NextLayout";
 import ThemeToggle from "@/Components/ThemeToggle";
@@ -27,6 +29,8 @@ export default function WebPhone() {
     const [currentSession, setCurrentSession] =
         useState<JsSIP.RTCSession | null>(null);
     const [isRegistered, setIsRegistered] = useState(false);
+    const [isTransferring, setIsTransferring] = useState(false);
+    const [transferDestination, setTransferDestination] = useState("");
 
     const config = usePage().props.config as {
         domain: string;
@@ -153,6 +157,43 @@ export default function WebPhone() {
         setIsOnHold(!isOnHold);
     };
 
+    const transferCall = () => {
+        if (!transferDestination.trim()) {
+            alert("Enter a valid user extension");
+            return;
+        }
+
+        const destinationSIP = `sip:${transferDestination.trim()}@${
+            config.domain
+        }`;
+
+        if (!currentSession) {
+            console.log("No current session");
+            return;
+        }
+
+        console.log("destinationSIP", destinationSIP);
+
+        var receiver = new JsSIP.URI(
+            "sip",
+            `${transferDestination.trim()}wp`,
+            config.domain
+        );
+
+        try {
+            currentSession.refer(receiver, {
+                extraHeaders: [`Contact: ${config.uri}`],
+            });
+            currentSession.on("accepted", function (e: any) {
+                console.log("call accepted", e);
+                // handleEndCall();
+            });
+            setTransferDestination("");
+        } catch (err) {
+            console.log("Error badi!", err);
+        }
+    };
+
     return (
         <NextLayout>
             <Head title="Phone" />
@@ -216,6 +257,31 @@ export default function WebPhone() {
                                 )}
                             </div>
                         </div>
+                        {!isRegistered && (
+                            <div className="mb-6 p-3 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center gap-2 text-red-700 dark:text-red-400 text-sm">
+                                <WifiOff size={16} />
+                                <span>
+                                    Not connected to service. Please check your
+                                    connection.
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Transfer Destrination Input */}
+                        {isActiveCall && isTransferring && (
+                            <div>
+                                <input
+                                    type="text"
+                                    placeholder="type transfer destination"
+                                    className={`my-2 w-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border-0 rounded-xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all`}
+                                    value={transferDestination}
+                                    onChange={(e) =>
+                                        isActiveCall &&
+                                        setTransferDestination(e.target.value)
+                                    }
+                                />
+                            </div>
+                        )}
 
                         {!isActiveCall ? (
                             // Normal State
@@ -230,6 +296,18 @@ export default function WebPhone() {
                         ) : (
                             // Active Call State
                             <div className="space-y-4">
+                                {/* Transfer Button */}
+                                {isActiveCall && isTransferring && (
+                                    <button
+                                        className="w-full bg-gray-600 hover:bg-green-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                                        onClick={transferCall}
+                                    >
+                                        <PhoneForwarded size={18} />
+                                        <span>Forward</span>
+                                    </button>
+                                )}
+
+                                {/* End Call Button */}
                                 <button
                                     className="w-full bg-red-600 hover:bg-red-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
                                     onClick={handleEndCall}
@@ -275,7 +353,10 @@ export default function WebPhone() {
                                         </span>
                                     </button>
 
-                                    <button className="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
+                                    <button
+                                        className="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                                        onClick={() => setIsTransferring(true)}
+                                    >
                                         <UserPlus size={20} />
                                         <span className="mt-2 text-xs font-medium">
                                             Transfer
