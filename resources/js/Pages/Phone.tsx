@@ -355,11 +355,15 @@ export default function WebPhone() {
 
                                     <button
                                         className="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
-                                        onClick={() => setIsTransferring(true)}
+                                        onClick={() =>
+                                            setIsTransferring(!isTransferring)
+                                        }
                                     >
                                         <UserPlus size={20} />
                                         <span className="mt-2 text-xs font-medium">
-                                            Transfer
+                                            {isTransferring
+                                                ? "Cancel Transfer"
+                                                : "Transfer"}
                                         </span>
                                     </button>
                                 </div>
