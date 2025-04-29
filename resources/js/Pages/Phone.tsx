@@ -26,6 +26,7 @@ export default function WebPhone() {
     const [ua, setUa] = useState<JsSIP.UA | null>(null);
     const [currentSession, setCurrentSession] =
         useState<JsSIP.RTCSession | null>(null);
+    const [isRegistered, setIsRegistered] = useState(false);
 
     const config = usePage().props.config as {
         domain: string;
@@ -36,6 +37,7 @@ export default function WebPhone() {
     };
 
     useEffect(() => {
+        getMicrophonePermission();
         let interval: NodeJS.Timeout | null = null;
 
         if (isActiveCall) {
@@ -60,7 +62,11 @@ export default function WebPhone() {
             user_agent: config.user_agent,
         };
 
-        const userAgent = createSipUA(uaConfig, setCurrentSession);
+        const userAgent = createSipUA(
+            uaConfig,
+            setCurrentSession,
+            setIsRegistered
+        );
         setUa(userAgent);
 
         // Cleanup on unmount
@@ -68,6 +74,20 @@ export default function WebPhone() {
             userAgent.stop();
         };
     }, []);
+
+    async function getMicrophonePermission() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+            });
+            // .then((stream) => console.log(stream))
+            // .catch((err) => console.log('err', err));
+
+            stream.getTracks().forEach((track) => track.stop()); // Stop the stream
+        } catch (error) {
+            console.error("Error accessing microphone:", error);
+        }
+    }
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -139,20 +159,36 @@ export default function WebPhone() {
             <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-white dark:from-gray-950 dark:to-black p-4 transition-colors duration-300">
                 <div className="w-full max-w-md mx-auto">
                     <div className="phone-container bg-gradient-to-br from-gray-100 to-white dark:from-gray-900 dark:to-black p-8 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-colors duration-300">
+                        {/* Status Bar */}
+                        <div className="flex justify-between items-center mb-2">
+                            <button
+                                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                    isRegistered
+                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                }`}
+                            >
+                                <span
+                                    className={`w-2 h-2 rounded-full ${
+                                        isRegistered
+                                            ? "bg-emerald-500"
+                                            : "bg-red-500"
+                                    }`}
+                                ></span>
+                                {isRegistered ? "Registered" : "Disconnected"}
+                            </button>
+                            <ThemeToggle />
+                        </div>
+                        {/* Header */}
                         <div className="flex justify-between items-center mb-6">
                             <h1 className="text-gray-900 dark:text-white text-xl font-medium">
                                 {isActiveCall ? "Active Call" : "Phone"}
                             </h1>
-
-                            <div className="flex items-center gap-3">
-                                {isActiveCall && (
-                                    <div className="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-                                        {formatTime(callDuration)}
-                                    </div>
-                                )}
-
-                                <ThemeToggle />
-                            </div>
+                            {isActiveCall && (
+                                <div className="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+                                    {formatTime(callDuration)}
+                                </div>
+                            )}
                         </div>
 
                         <div className="mb-6">

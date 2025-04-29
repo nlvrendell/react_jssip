@@ -9,7 +9,7 @@ export function createSipUA(
         user_agent: string;
     },
     setCurrentSession: (session: JsSIP.RTCSession | null) => void,
-    setCallStatus?: (status: string) => void
+    setIsRegistered: (status: boolean) => void
 ) {
     const socket = new JsSIP.WebSocketInterface(config.wsServers);
 
@@ -31,10 +31,12 @@ export function createSipUA(
 
     userAgent.on("registered", () => {
         console.log("SIP Registered");
+        setIsRegistered(true);
     });
 
     // Handle registration failure
     userAgent.on("registrationFailed", (e) => {
+        setIsRegistered(false);
         console.error("Registration failed", e);
     });
 

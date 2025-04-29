@@ -26,7 +26,7 @@ export default function Welcome({
             user_agent: "RendellUser",
         };
 
-        const userAgent = createSipUA(config, setCurrentSession, setCallStatus);
+        const userAgent = createSipUA(config, setCurrentSession);
         setUa(userAgent);
 
         // Cleanup on unmount
