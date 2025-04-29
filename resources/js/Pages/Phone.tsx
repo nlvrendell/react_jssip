@@ -209,7 +209,7 @@ export default function WebPhone() {
                             <button
                                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                                     state
-                                        ? "bg-orange-500 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                                        ? "bg-orange-300 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
                                         : isRegistered
                                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                                         : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
