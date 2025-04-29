@@ -31,6 +31,7 @@ export default function WebPhone() {
     const [isRegistered, setIsRegistered] = useState(false);
     const [isTransferring, setIsTransferring] = useState(false);
     const [transferDestination, setTransferDestination] = useState("");
+    const [state, setState] = useState("");
 
     const config = usePage().props.config as {
         domain: string;
@@ -69,7 +70,8 @@ export default function WebPhone() {
         const userAgent = createSipUA(
             uaConfig,
             setCurrentSession,
-            setIsRegistered
+            setIsRegistered,
+            setState
         );
         setUa(userAgent);
 
@@ -114,7 +116,7 @@ export default function WebPhone() {
 
         const destinationSIP = `sip:${destination.trim()}@${config.domain}`;
 
-        call(ua, destinationSIP, setCurrentSession, setIsActiveCall);
+        call(ua, destinationSIP, setCurrentSession, setIsActiveCall, setState);
     };
 
     const handleEndCall = () => {
@@ -124,6 +126,8 @@ export default function WebPhone() {
         setIsActiveCall(false);
         setIsMuted(false);
         setIsOnHold(false);
+        setIsTransferring(false);
+        setTransferDestination("");
     };
 
     const toggleMute = () => {
@@ -172,6 +176,7 @@ export default function WebPhone() {
             return;
         }
 
+        setState("Transferring..");
         console.log("destinationSIP", destinationSIP);
 
         var receiver = new JsSIP.URI(
@@ -186,7 +191,6 @@ export default function WebPhone() {
             });
             currentSession.on("accepted", function (e: any) {
                 console.log("call accepted", e);
-                // handleEndCall();
             });
             setTransferDestination("");
         } catch (err) {
@@ -204,19 +208,27 @@ export default function WebPhone() {
                         <div className="flex justify-between items-center mb-2">
                             <button
                                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                                    isRegistered
+                                    state
+                                        ? "bg-orange-500 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                                        : isRegistered
                                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                                         : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                                 }`}
                             >
                                 <span
                                     className={`w-2 h-2 rounded-full ${
-                                        isRegistered
+                                        state
+                                            ? "bg-orange-500"
+                                            : isRegistered
                                             ? "bg-emerald-500"
                                             : "bg-red-500"
                                     }`}
                                 ></span>
-                                {isRegistered ? "Registered" : "Disconnected"}
+                                {state
+                                    ? state
+                                    : isRegistered
+                                    ? "Registered"
+                                    : "Disconnected"}
                             </button>
                             <ThemeToggle />
                         </div>
