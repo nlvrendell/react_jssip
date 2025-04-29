@@ -27,6 +27,7 @@ export default function WebPhone() {
     const [currentSession, setCurrentSession] =
         useState<JsSIP.RTCSession | null>(null);
     const [isRegistered, setIsRegistered] = useState(false);
+    const [isCallIncoming, setIsCallIncoming] = useState(false);
 
     const config = usePage().props.config as {
         domain: string;
@@ -65,7 +66,8 @@ export default function WebPhone() {
         const userAgent = createSipUA(
             uaConfig,
             setCurrentSession,
-            setIsRegistered
+            setIsRegistered,
+            setIsCallIncoming
         );
         setUa(userAgent);
 
@@ -219,14 +221,37 @@ export default function WebPhone() {
 
                         {!isActiveCall ? (
                             // Normal State
-                            <button
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-                                onClick={handleCall}
-                                disabled={!destination.trim()}
-                            >
-                                <Phone size={18} />
-                                <span>call</span>
-                            </button>
+                            <>
+                                <button
+                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                                    onClick={handleCall}
+                                    disabled={!destination.trim()}
+                                >
+                                    <Phone size={18} />
+                                    <span>call</span>
+                                </button>
+                                {isCallIncoming && (
+                                    <button
+                                        className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                                        onClick={() => {
+                                            if (currentSession) {
+                                                currentSession.answer({
+                                                    mediaConstraints: {
+                                                        audio: true,
+                                                        video: false,
+                                                    },
+                                                });
+
+                                                setIsCallIncoming(false);
+                                                setIsActiveCall(true);
+                                            }
+                                        }}
+                                    >
+                                        <Phone size={18} />
+                                        <span>accept</span>
+                                    </button>
+                                )}
+                            </>
                         ) : (
                             // Active Call State
                             <div className="space-y-4">

@@ -26,13 +26,13 @@ export default function Welcome({
             user_agent: "RendellUser",
         };
 
-        const userAgent = createSipUA(config, setCurrentSession);
-        setUa(userAgent);
+        // const userAgent = createSipUA(config, setCurrentSession);
+        // setUa(userAgent);
 
-        // Cleanup on unmount
-        return () => {
-            userAgent.stop();
-        };
+        // // Cleanup on unmount
+        // return () => {
+        //     userAgent.stop();
+        // };
     }, []);
 
     const handleCall = (e: any) => {
