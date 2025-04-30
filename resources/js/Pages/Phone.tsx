@@ -204,6 +204,7 @@ export default function WebPhone() {
     return (
         <NextLayout>
             <Head title="Phone" />
+            {/* <audio id="remoteAudio" autoPlay /> */}
             <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-white dark:from-gray-950 dark:to-black p-4 transition-colors duration-300">
                 <div className="w-full max-w-md mx-auto">
                     <div className="phone-container bg-gradient-to-br from-gray-100 to-white dark:from-gray-900 dark:to-black p-8 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-colors duration-300">
@@ -301,34 +302,50 @@ export default function WebPhone() {
                         {!isActiveCall ? (
                             // Normal State
                             <>
-                                <button
-                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-                                    onClick={handleCall}
-                                    disabled={!destination.trim()}
-                                >
-                                    <Phone size={18} />
-                                    <span>call</span>
-                                </button>
-                                {isCallIncoming && (
-                                    <button
-                                        className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-                                        onClick={() => {
-                                            if (currentSession) {
-                                                currentSession.answer({
-                                                    mediaConstraints: {
-                                                        audio: true,
-                                                        video: false,
-                                                    },
-                                                });
+                                {isCallIncoming ? (
+                                    <>
+                                        <button
+                                            className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                                            onClick={() => {
+                                                if (currentSession) {
+                                                    currentSession.answer({
+                                                        mediaConstraints: {
+                                                            audio: true,
+                                                            video: false,
+                                                        },
+                                                    });
 
-                                                setIsCallIncoming(false);
-                                                setIsActiveCall(true);
-                                            }
-                                        }}
-                                    >
-                                        <Phone size={18} />
-                                        <span>accept</span>
-                                    </button>
+                                                    setIsCallIncoming(false);
+                                                    setIsActiveCall(true);
+                                                }
+                                            }}
+                                        >
+                                            <Phone size={18} />
+                                            <span>accept</span>
+                                        </button>
+                                        <button
+                                            className="w-full mt-2 bg-red-600 hover:bg-red-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                                            onClick={() => {
+                                                if (currentSession) {
+                                                    handleEndCall();
+                                                }
+                                            }}
+                                        >
+                                            <PhoneOff size={18} />
+                                            <span>reject</span>
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                                            onClick={handleCall}
+                                            disabled={!destination.trim()}
+                                        >
+                                            <Phone size={18} />
+                                            <span>call</span>
+                                        </button>
+                                    </>
                                 )}
                             </>
                         ) : (
