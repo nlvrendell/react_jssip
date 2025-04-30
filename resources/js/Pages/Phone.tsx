@@ -74,7 +74,8 @@ export default function WebPhone() {
             setIsRegistered,
             setIsCallIncoming,
             setState,
-            handleEndCall
+            handleEndCall,
+            setDestination
         );
         setUa(userAgent);
 
@@ -129,6 +130,7 @@ export default function WebPhone() {
         setIsOnHold(false);
         setIsTransferring(false);
         setTransferDestination("");
+        setDestination("");
     };
 
     const toggleMute = () => {

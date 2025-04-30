@@ -12,7 +12,8 @@ export function createSipUA(
     setIsRegistered: (status: boolean) => void,
     setIsCallIncoming: (status: boolean) => void,
     setState: (state: string) => void,
-    handleEndCall: () => void
+    handleEndCall: () => void,
+    setDestination: (destination: string) => void
 ) {
     const socket = new JsSIP.WebSocketInterface(config.wsServers);
 
@@ -46,6 +47,8 @@ export function createSipUA(
     // Handle incoming call
     userAgent.on("newRTCSession", (e: any) => {
         const session = e.session;
+        console.log("caller data", session.remote_identity._uri._user);
+        setDestination(session.remote_identity._uri._user);
         if (e.originator === "remote") {
             console.log("Incoming call...");
             setIsCallIncoming(true);
@@ -85,12 +88,14 @@ export function createSipUA(
                 console.log("call failed", e);
                 setState("");
                 setIsCallIncoming(false);
+                setDestination("");
             });
 
             session.on("ended", () => {
                 console.log("Call ended!");
                 handleEndCall();
                 setState("");
+                setDestination("");
             });
 
             setCurrentSession(session);
