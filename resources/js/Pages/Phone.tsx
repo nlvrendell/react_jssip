@@ -73,7 +73,8 @@ export default function WebPhone() {
             setCurrentSession,
             setIsRegistered,
             setIsCallIncoming,
-            setState
+            setState,
+            handleEndCall
         );
         setUa(userAgent);
 

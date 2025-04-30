@@ -11,7 +11,8 @@ export function createSipUA(
     setCurrentSession: (session: JsSIP.RTCSession | null) => void,
     setIsRegistered: (status: boolean) => void,
     setIsCallIncoming: (status: boolean) => void,
-    setState: (state: string) => void
+    setState: (state: string) => void,
+    handleEndCall: () => void
 ) {
     const socket = new JsSIP.WebSocketInterface(config.wsServers);
 
@@ -72,6 +73,7 @@ export function createSipUA(
 
             session.on("ended", () => {
                 console.log("Call ended!");
+                handleEndCall();
                 setState("");
             });
 
