@@ -1,6 +1,8 @@
 // useSipClient.ts
 import JsSIP from "jssip";
 
+let ringtone: HTMLAudioElement | null = null;
+
 export function createSipUA(
     config: {
         uri: string;
@@ -16,7 +18,6 @@ export function createSipUA(
     setDestination: (destination: string) => void
 ) {
     const socket = new JsSIP.WebSocketInterface(config.wsServers);
-
     // JsSIP.debug.enable("JsSIP:*");
     // JsSIP.debug.disable();
 
@@ -36,6 +37,7 @@ export function createSipUA(
     userAgent.on("registered", () => {
         console.log("SIP Registered");
         setIsRegistered(true);
+        initializeRingTone();
     });
 
     // Handle registration failure
@@ -77,11 +79,17 @@ export function createSipUA(
 
             session.on("progress", function () {
                 console.log("Call is in progress...");
+                if (ringtone) {
+                    ringtone.play().catch((err) => {
+                        console.error("Ringtone failed to play:", err);
+                    });
+                }
             });
 
             session.on("accepted", () => {
                 console.log("Call accepted!");
                 setState("");
+                stopRingtone(ringtone);
             });
 
             session.on("failed", function (e: any) {
@@ -89,6 +97,7 @@ export function createSipUA(
                 setState("");
                 setIsCallIncoming(false);
                 setDestination("");
+                stopRingtone(ringtone);
             });
 
             session.on("ended", () => {
@@ -96,6 +105,7 @@ export function createSipUA(
                 handleEndCall();
                 setState("");
                 setDestination("");
+                stopRingtone(ringtone);
             });
 
             setCurrentSession(session);
@@ -104,4 +114,27 @@ export function createSipUA(
 
     userAgent.start();
     return userAgent;
+}
+
+function stopRingtone(ringtone: HTMLAudioElement | null) {
+    if (!ringtone) {
+        return;
+    }
+
+    ringtone.pause();
+    ringtone.currentTime = 0;
+}
+
+function initializeRingTone() {
+    document.addEventListener(
+        "mousemove",
+        () => {
+            console.log("mouse mousemove");
+            if (!ringtone) {
+                ringtone = new Audio("/ringtone.mp3");
+                ringtone.loop = true;
+            }
+        },
+        { once: true, passive: true }
+    );
 }
