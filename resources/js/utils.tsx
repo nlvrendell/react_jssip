@@ -51,6 +51,21 @@ export function createSipUA(
             setIsCallIncoming(true);
             setState("Incoming Call..");
 
+            session.on("peerconnection", () => {
+                console.log("RTCPeerConnection created");
+                session.connection?.addEventListener("track", (event: any) => {
+                    const remoteAudio = document.getElementById(
+                        "remoteAudio"
+                    ) as HTMLAudioElement;
+                    if (remoteAudio && event.streams[0]) {
+                        remoteAudio.srcObject = event.streams[0];
+                        remoteAudio.play().catch((err) => {
+                            console.error("Audio playback failed:", err);
+                        });
+                    }
+                });
+            });
+
             // Event when the call ends
             session.on("terminated", () => {
                 setState("Incoming Call..");
@@ -64,19 +79,6 @@ export function createSipUA(
             session.on("accepted", () => {
                 console.log("Call accepted!");
                 setState("");
-
-                // Attach the remote stream to audio element
-                session.connection.addEventListener("track", (event: any) => {
-                    const remoteAudio = document.getElementById(
-                        "remoteAudio"
-                    ) as HTMLAudioElement;
-                    if (remoteAudio && event.streams[0]) {
-                        remoteAudio.srcObject = event.streams[0];
-                        remoteAudio.play().catch((err) => {
-                            console.error("Audio playback failed:", err);
-                        });
-                    }
-                });
             });
 
             session.on("failed", function (e: any) {

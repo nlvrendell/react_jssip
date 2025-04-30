@@ -89,8 +89,6 @@ export default function WebPhone() {
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
             });
-            // .then((stream) => console.log(stream))
-            // .catch((err) => console.log('err', err));
 
             stream.getTracks().forEach((track) => track.stop()); // Stop the stream
         } catch (error) {
@@ -204,7 +202,7 @@ export default function WebPhone() {
     return (
         <NextLayout>
             <Head title="Phone" />
-            {/* <audio id="remoteAudio" autoPlay /> */}
+            <audio id="remoteAudio" autoPlay playsInline />
             <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-white dark:from-gray-950 dark:to-black p-4 transition-colors duration-300">
                 <div className="w-full max-w-md mx-auto">
                     <div className="phone-container bg-gradient-to-br from-gray-100 to-white dark:from-gray-900 dark:to-black p-8 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-colors duration-300">
