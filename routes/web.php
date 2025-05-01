@@ -1,12 +1,11 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Phone', [
+    return Inertia::render('WebPhone', [
         'config' => [
             'uri' => config('connectware.uri'),
             'password' => config('connectware.password'),
@@ -18,10 +17,13 @@ Route::get('/', function () {
 });
 Route::get('/original', function () {
     return Inertia::render('Original', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
+        'config' => [
+            'uri' => config('connectware.uri'),
+            'password' => config('connectware.password'),
+            'domain' => config('connectware.domain'),
+            'server' => config('connectware.server'),
+            'user_agent' => config('connectware.user_agent'),
+        ],
     ]);
 });
 

@@ -1,4 +1,3 @@
-// useSipClient.ts
 import JsSIP from "jssip";
 
 let ringtone: HTMLAudioElement | null = null;
@@ -29,30 +28,24 @@ export function createSipUA(
         session_timers: false,
     });
 
-    // Handle registration success
     userAgent.on("connected", () => {
         console.log("Connected to WebSocket");
     });
 
     userAgent.on("registered", () => {
-        console.log("SIP Registered");
         setIsRegistered(true);
         initializeRingTone();
     });
 
-    // Handle registration failure
     userAgent.on("registrationFailed", (e) => {
         setIsRegistered(false);
         console.error("Registration failed", e);
     });
 
-    // Handle incoming call
     userAgent.on("newRTCSession", (e: any) => {
         const session = e.session;
-        console.log("caller data", session.remote_identity._uri._user);
         setDestination(session.remote_identity._uri._user);
         if (e.originator === "remote") {
-            console.log("Incoming call...");
             setIsCallIncoming(true);
             setState("Incoming Call..");
 
@@ -73,7 +66,6 @@ export function createSipUA(
 
             // Event when the call ends
             session.on("terminated", () => {
-                setState("Incoming Call..");
                 setCurrentSession(null);
             });
 
@@ -129,7 +121,6 @@ function initializeRingTone() {
     document.addEventListener(
         "mousemove",
         () => {
-            console.log("mouse mousemove");
             if (!ringtone) {
                 ringtone = new Audio("/ringtone.mp3");
                 ringtone.loop = true;

@@ -1,4 +1,3 @@
-import { PageProps } from "@/types";
 import { Head, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 
@@ -138,8 +137,6 @@ export default function WebPhone() {
             return;
         }
         var isMuted = currentSession.isMuted()?.audio;
-
-        console.log("isMuted", isMuted);
 
         isMuted ? currentSession.unmute() : currentSession.mute();
 
@@ -358,7 +355,7 @@ export default function WebPhone() {
                                         onClick={transferCall}
                                     >
                                         <PhoneForwarded size={18} />
-                                        <span>Forward</span>
+                                        <span>forward</span>
                                     </button>
                                 )}
 
@@ -368,7 +365,7 @@ export default function WebPhone() {
                                     onClick={handleEndCall}
                                 >
                                     <PhoneOff size={18} />
-                                    <span>End call</span>
+                                    <span>end call</span>
                                 </button>
 
                                 <div className="grid grid-cols-3 gap-3">
