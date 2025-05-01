@@ -1,37 +1,107 @@
-import { Head, usePage } from "@inertiajs/react";
-import { useEffect, useState } from "react";
+"use client";
 
-import {
-    Phone,
-    PhoneOff,
-    Mic,
-    MicOff,
-    Pause,
-    Play,
-    UserPlus,
-    PhoneForwarded,
-    WifiOff,
-} from "lucide-react";
-import { NextLayout } from "@/Layouts/NextLayout";
+import { useEffect, useState } from "react";
 import ThemeToggle from "@/Components/ThemeToggle";
-import JsSIP from "jssip";
+import { ContactsList } from "@/Components/Phone/ContactList";
+import { CallHistoryItem, Contact } from "@/types";
+import { CallHistory } from "@/Components/Phone/CallHistory";
+import { Teams } from "@/Components/Phone/Teams";
+import { Settings } from "@/Components/Phone/Settings";
+import { UserInfo } from "@/Components/Phone/UserInfo";
+import { NextLayout } from "@/Layouts/NextLayout";
+import { Phone, UserPlus, Clock, SettingsIcon } from "lucide-react";
+import { PropsWithChildren } from "react";
+import { PhoneUI } from "@/Components/Phone/PhoneUI";
+import { Head, usePage } from "@inertiajs/react";
 import { createSipUA } from "@/utils";
+import JsSIP from "jssip";
 import { call } from "@/uitls/phone";
 
+// Mock data
+const mockContacts: Contact[] = [
+    { id: "1", name: "John Smith", number: "108", avatar: "JS" },
+    { id: "2", name: "Sarah Johnson", number: "100", avatar: "SJ" },
+    { id: "3", name: "Michael Brown", number: "1050", avatar: "MB" },
+    { id: "4", name: "Emily Davis", number: "456-789-0123", avatar: "ED" },
+    { id: "5", name: "David Wilson", number: "567-890-1234", avatar: "DW" },
+    { id: "6", name: "Jessica Taylor", number: "678-901-2345", avatar: "JT" },
+    { id: "7", name: "Robert Martinez", number: "789-012-3456", avatar: "RM" },
+    {
+        id: "8",
+        name: "Jennifer Anderson",
+        number: "890-123-4567",
+        avatar: "JA",
+    },
+    {
+        id: "9",
+        name: "Christopher Thomas",
+        number: "901-234-5678",
+        avatar: "CT",
+    },
+    { id: "10", name: "Lisa Jackson", number: "012-345-6789", avatar: "LJ" },
+];
+
+const initialCallHistory: CallHistoryItem[] = [
+    {
+        id: "1",
+        name: "John Smith",
+        number: "123-456-7890",
+        timestamp: new Date(Date.now() - 1000 * 60 * 15),
+        type: "outgoing",
+        duration: 125,
+    },
+    {
+        id: "2",
+        name: "Unknown",
+        number: "234-567-8901",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
+        type: "missed",
+        duration: 0,
+    },
+    {
+        id: "3",
+        name: "Sarah Johnson",
+        number: "345-678-9012",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5),
+        type: "incoming",
+        duration: 312,
+    },
+    {
+        id: "4",
+        name: "Michael Brown",
+        number: "456-789-0123",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
+        type: "outgoing",
+        duration: 45,
+    },
+    {
+        id: "5",
+        name: "Emily Davis",
+        number: "567-890-1234",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
+        type: "incoming",
+        duration: 189,
+    },
+];
+
 export default function WebPhone() {
-    const [isActiveCall, setIsActiveCall] = useState(false);
+    const [contacts] = useState<Contact[]>(mockContacts);
+    const [callHistory, setCallHistory] =
+        useState<CallHistoryItem[]>(initialCallHistory);
     const [destination, setDestination] = useState("");
+    const [isRegistered, setIsRegistered] = useState(false);
+    const [isActiveCall, setIsActiveCall] = useState(false);
+    const [callDuration, setCallDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
     const [isOnHold, setIsOnHold] = useState(false);
-    const [callDuration, setCallDuration] = useState(0);
-    const [ua, setUa] = useState<JsSIP.UA | null>(null);
+    const [activeSection, setActiveSection] = useState("phone");
     const [currentSession, setCurrentSession] =
         useState<JsSIP.RTCSession | null>(null);
-    const [isRegistered, setIsRegistered] = useState(false);
-    const [isCallIncoming, setIsCallIncoming] = useState(false);
+    const [state, setState] = useState("");
+    const [ua, setUa] = useState<JsSIP.UA | null>(null);
     const [isTransferring, setIsTransferring] = useState(false);
     const [transferDestination, setTransferDestination] = useState("");
-    const [state, setState] = useState("");
+    const [isCallIncoming, setIsCallIncoming] = useState(false);
 
     const config = usePage().props.config as {
         domain: string;
@@ -41,24 +111,6 @@ export default function WebPhone() {
         user_agent: string;
     };
 
-    useEffect(() => {
-        getMicrophonePermission();
-        let interval: NodeJS.Timeout | null = null;
-
-        if (isActiveCall) {
-            interval = setInterval(() => {
-                setCallDuration((prev) => prev + 1);
-            }, 1000);
-        } else {
-            setCallDuration(0);
-        }
-
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [isActiveCall]);
-
-    // separate useEffect for jssip cause isActive refresh the session everytime it updates
     useEffect(() => {
         const uaConfig = {
             uri: config.uri,
@@ -84,44 +136,61 @@ export default function WebPhone() {
         };
     }, []);
 
-    async function getMicrophonePermission() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: true,
-            });
-
-            stream.getTracks().forEach((track) => track.stop()); // Stop the stream
-        } catch (error) {
-            console.error("Error accessing microphone:", error);
+    const handleContactSelect = (contact: Contact) => {
+        if (isTransferring) {
+            setTransferDestination(contact.number);
+            return;
         }
-    }
 
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, "0")}:${secs
-            .toString()
-            .padStart(2, "0")}`;
+        setDestination(contact.number);
+    };
+
+    const handleHistorySelect = (item: CallHistoryItem) => {
+        if (isTransferring) {
+            setTransferDestination(item.number);
+            return;
+        }
+        setDestination(item.number);
     };
 
     const handleCall = () => {
-        if (!destination.trim()) {
-            console.log("Destination not set");
-            return;
+        if (destination.trim() && isRegistered) {
+            if (!ua) {
+                console.log("UA not initialized");
+                return;
+            }
+
+            const destinationSIP = `sip:${destination.trim()}@${config.domain}`;
+
+            call(
+                ua,
+                destinationSIP,
+                setCurrentSession,
+                setIsActiveCall,
+                setState
+            );
+
+            // Add to call history
+            const contact = contacts.find(
+                (c) =>
+                    c.number === destination ||
+                    c.name.toLowerCase().includes(destination.toLowerCase())
+            );
+            const newCall: CallHistoryItem = {
+                id: Date.now().toString(),
+                name: contact?.name || "Unknown",
+                number: contact?.number || destination,
+                timestamp: new Date(),
+                type: "outgoing",
+                duration: 0,
+            };
+
+            setCallHistory((prev) => [newCall, ...prev]);
         }
-
-        if (!ua) {
-            console.log("UA not initialized");
-            return;
-        }
-
-        const destinationSIP = `sip:${destination.trim()}@${config.domain}`;
-
-        call(ua, destinationSIP, setCurrentSession, setIsActiveCall, setState);
     };
 
     const handleEndCall = () => {
-        if (currentSession) {
+        if (currentSession && !currentSession.isEnded()) {
             currentSession.terminate();
         }
         setIsActiveCall(false);
@@ -130,6 +199,55 @@ export default function WebPhone() {
         setIsTransferring(false);
         setTransferDestination("");
         setDestination("");
+
+        // Update the duration of the most recent call
+        setCallHistory((prev) => {
+            const updated = [...prev];
+            if (updated[0]) {
+                updated[0] = { ...updated[0], duration: callDuration };
+            }
+            return updated;
+        });
+    };
+
+    // Render the active section content
+    const renderContent = () => {
+        switch (activeSection) {
+            case "phone":
+                return (
+                    <div className="flex flex-col h-full">
+                        <div className="flex-1 overflow-hidden">
+                            {activeSection === "phone" && (
+                                <div className="flex flex-col h-full">
+                                    <div className="flex-1 overflow-y-auto">
+                                        <ContactsList
+                                            contacts={contacts}
+                                            onSelect={handleContactSelect}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            case "history":
+                return (
+                    <div className="flex flex-col h-full">
+                        <div className="flex-1 overflow-hidden">
+                            <CallHistory
+                                history={callHistory}
+                                onSelect={handleHistorySelect}
+                            />
+                        </div>
+                    </div>
+                );
+            case "teams":
+                return <Teams />;
+            case "settings":
+                return <Settings />;
+            default:
+                return null;
+        }
     };
 
     const toggleMute = () => {
@@ -192,273 +310,175 @@ export default function WebPhone() {
             currentSession.on("accepted", function (e: any) {
                 console.log("call accepted", e);
             });
-            setTransferDestination("");
+
+            handleEndCall();
         } catch (err) {
             console.log("Error badi!", err);
         }
     };
 
+    const answerCall = () => {
+        if (currentSession) {
+            currentSession.answer({
+                mediaConstraints: {
+                    audio: true,
+                    video: false,
+                },
+            });
+
+            setIsCallIncoming(false);
+            setIsActiveCall(true);
+
+            const contact = contacts.find(
+                (c) =>
+                    c.number === destination.replace(/wp$/, "") ||
+                    c.name.toLowerCase().includes(destination.toLowerCase())
+            );
+
+            const newCall: CallHistoryItem = {
+                id: Date.now().toString(),
+                name: contact?.name || "Unknown",
+                number: contact?.number || destination,
+                timestamp: new Date(),
+                type: "outgoing",
+                duration: 0,
+            };
+
+            setCallHistory((prev) => [newCall, ...prev]);
+        }
+    };
+
     return (
         <NextLayout>
-            <Head title="Phone" />
+            <Head title="Original" />
             <audio id="remoteAudio" autoPlay playsInline />
-            <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-white dark:from-gray-950 dark:to-black p-4 transition-colors duration-300">
-                <div className="w-full max-w-md mx-auto">
-                    <div className="phone-container bg-gradient-to-br from-gray-100 to-white dark:from-gray-900 dark:to-black p-8 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-colors duration-300">
-                        {/* Status Bar */}
-                        <div className="flex justify-between items-center mb-2">
-                            <button
-                                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                                    state
-                                        ? "bg-orange-300 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-                                        : isRegistered
-                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                }`}
-                            >
-                                <span
-                                    className={`w-2 h-2 rounded-full ${
-                                        state
-                                            ? "bg-orange-500"
-                                            : isRegistered
-                                            ? "bg-emerald-500"
-                                            : "bg-red-500"
-                                    }`}
-                                ></span>
-                                {state
-                                    ? state
-                                    : isRegistered
-                                    ? "Registered"
-                                    : "Disconnected"}
-                            </button>
-                            <ThemeToggle />
-                        </div>
-                        {/* Header */}
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-gray-900 dark:text-white text-xl font-medium">
-                                {isActiveCall ? "Active Call" : "Phone"}
-                            </h1>
-                            {isActiveCall && (
-                                <div className="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-                                    {formatTime(callDuration)}
-                                </div>
-                            )}
-                        </div>
+            <div className="w-full h-screen flex">
+                {/* Left Sidebar */}
+                <div className="w-1/4 border-r border-gray-200 dark:border-gray-800 flex flex-col">
+                    {/* Logo/App Name */}
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                            WebPhone
+                        </h1>
+                        <ThemeToggle />
+                    </div>
 
-                        <div className="mb-6">
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="type destination"
-                                    className="w-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border-0 rounded-xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                                    value={destination}
-                                    onChange={(e) =>
-                                        !isActiveCall &&
-                                        setDestination(e.target.value)
-                                    }
-                                    readOnly={isActiveCall}
-                                />
-                                {isActiveCall && (
-                                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="animate-pulse w-2 h-2 bg-emerald-500 rounded-full"></span>
-                                            <span className="text-emerald-600 dark:text-emerald-500 text-xs font-medium">
-                                                Connected
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        {!isRegistered && (
-                            <div className="mb-6 p-3 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center gap-2 text-red-700 dark:text-red-400 text-sm">
-                                <WifiOff size={16} />
-                                <span>
-                                    Not connected to service. Please check your
-                                    connection.
-                                </span>
-                            </div>
-                        )}
-
-                        {/* Transfer Destrination Input */}
-                        {isActiveCall && isTransferring && (
-                            <div>
-                                <input
-                                    type="text"
-                                    placeholder="type transfer destination"
-                                    className={`my-2 w-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border-0 rounded-xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all`}
-                                    value={transferDestination}
-                                    onChange={(e) =>
-                                        isActiveCall &&
-                                        setTransferDestination(e.target.value)
-                                    }
-                                />
-                            </div>
-                        )}
-
-                        {!isActiveCall ? (
-                            // Normal State
-                            <>
-                                {isCallIncoming ? (
-                                    <>
-                                        <button
-                                            className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-                                            onClick={() => {
-                                                if (currentSession) {
-                                                    currentSession.answer({
-                                                        mediaConstraints: {
-                                                            audio: true,
-                                                            video: false,
-                                                        },
-                                                    });
-
-                                                    setIsCallIncoming(false);
-                                                    setIsActiveCall(true);
-                                                }
-                                            }}
-                                        >
-                                            <Phone size={18} />
-                                            <span>accept</span>
-                                        </button>
-                                        <button
-                                            className="w-full mt-2 bg-red-600 hover:bg-red-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-                                            onClick={() => {
-                                                if (currentSession) {
-                                                    handleEndCall();
-                                                }
-                                            }}
-                                        >
-                                            <PhoneOff size={18} />
-                                            <span>reject</span>
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <button
-                                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-                                            onClick={handleCall}
-                                            disabled={!destination.trim()}
-                                        >
-                                            <Phone size={18} />
-                                            <span>call</span>
-                                        </button>
-                                    </>
-                                )}
-                            </>
-                        ) : (
-                            // Active Call State
-                            <div className="space-y-4">
-                                {/* Transfer Button */}
-                                {isActiveCall && isTransferring && (
+                    {/* Sidebar Navigation - Using flex-1 and flex-col to take remaining space */}
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <div className="flex flex-1 min-h-0">
+                            {/* Navigation Menu */}
+                            <div className="w-16 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
+                                <nav className="flex flex-col items-center py-4 gap-4">
                                     <button
-                                        className="w-full bg-gray-600 hover:bg-green-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-                                        onClick={transferCall}
-                                    >
-                                        <PhoneForwarded size={18} />
-                                        <span>forward</span>
-                                    </button>
-                                )}
-
-                                {/* End Call Button */}
-                                <button
-                                    className="w-full bg-red-600 hover:bg-red-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-                                    onClick={handleEndCall}
-                                >
-                                    <PhoneOff size={18} />
-                                    <span>end call</span>
-                                </button>
-
-                                <div className="grid grid-cols-3 gap-3">
-                                    <button
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all ${
-                                            isMuted
-                                                ? "bg-gray-200 dark:bg-gray-700 text-red-600 dark:text-red-400"
-                                                : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700"
-                                        }`}
-                                        onClick={toggleMute}
-                                    >
-                                        {isMuted ? (
-                                            <MicOff size={20} />
-                                        ) : (
-                                            <Mic size={20} />
-                                        )}
-                                        <span className="mt-2 text-xs font-medium">
-                                            Mute
-                                        </span>
-                                    </button>
-
-                                    <button
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all ${
-                                            isOnHold
-                                                ? "bg-gray-200 dark:bg-gray-700 text-amber-600 dark:text-amber-400"
-                                                : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700"
-                                        }`}
-                                        onClick={toggleHold}
-                                    >
-                                        {isOnHold ? (
-                                            <Play size={20} />
-                                        ) : (
-                                            <Pause size={20} />
-                                        )}
-                                        <span className="mt-2 text-xs font-medium">
-                                            Hold
-                                        </span>
-                                    </button>
-
-                                    <button
-                                        className="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
                                         onClick={() =>
-                                            setIsTransferring(!isTransferring)
+                                            setActiveSection("phone")
                                         }
+                                        className={`p-3 rounded-lg ${
+                                            activeSection === "phone"
+                                                ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                                : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+                                        }`}
+                                        title="Contacts"
+                                    >
+                                        <Phone size={20} />
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setActiveSection("history")
+                                        }
+                                        className={`p-3 rounded-lg ${
+                                            activeSection === "history"
+                                                ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                                : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+                                        }`}
+                                        title="Call History"
+                                    >
+                                        <Clock size={20} />
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setActiveSection("teams")
+                                        }
+                                        className={`p-3 rounded-lg ${
+                                            activeSection === "teams"
+                                                ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                                : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+                                        }`}
+                                        title="Teams"
                                     >
                                         <UserPlus size={20} />
-                                        <span className="mt-2 text-xs font-medium">
-                                            {isTransferring
-                                                ? "Cancel Transfer"
-                                                : "Transfer"}
-                                        </span>
                                     </button>
-                                </div>
+                                    <button
+                                        onClick={() =>
+                                            setActiveSection("settings")
+                                        }
+                                        className={`p-3 rounded-lg ${
+                                            activeSection === "settings"
+                                                ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                                : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+                                        }`}
+                                        title="Settings"
+                                    >
+                                        <SettingsIcon size={20} />
+                                    </button>
+                                </nav>
                             </div>
-                        )}
 
-                        {isActiveCall && (
-                            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
-                                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                                    <div className="flex items-center gap-1">
-                                        <div
-                                            className={`w-2 h-2 rounded-full ${
-                                                isMuted
-                                                    ? "bg-red-500"
-                                                    : "bg-emerald-500"
-                                            }`}
-                                        ></div>
-                                        <span>
-                                            {isMuted
-                                                ? "Microphone off"
-                                                : "Microphone on"}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <div
-                                            className={`w-2 h-2 rounded-full ${
-                                                isOnHold
-                                                    ? "bg-amber-500"
-                                                    : "bg-emerald-500"
-                                            }`}
-                                        ></div>
-                                        <span>
-                                            {isOnHold
-                                                ? "Call on hold"
-                                                : "Call active"}
-                                        </span>
-                                    </div>
+                            {/* Content Area */}
+                            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                                {/* Section Header */}
+                                <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+                                    <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                                        {activeSection === "phone" &&
+                                            "Contacts"}
+                                        {activeSection === "history" &&
+                                            "Call History"}
+                                        {activeSection === "teams" && "Teams"}
+                                        {activeSection === "settings" &&
+                                            "Settings"}
+                                    </h2>
+                                </div>
+
+                                {/* Section Content - Ensure it's scrollable */}
+                                <div className="flex-1 overflow-y-auto">
+                                    {renderContent()}
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    </div>
+
+                    {/* User Info - Fixed at bottom */}
+                    <div className="border-t border-gray-200 dark:border-gray-800">
+                        <UserInfo isRegistered={isRegistered} />
                     </div>
                 </div>
-            </main>
+
+                {/* Main Content - Phone UI */}
+                <div className="w-3/4 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+                    <PhoneUI
+                        destination={destination}
+                        isRegistered={isRegistered}
+                        isActiveCall={isActiveCall}
+                        callDuration={callDuration}
+                        isMuted={isMuted}
+                        isOnHold={isOnHold}
+                        transferDestination={transferDestination}
+                        isTransferring={isTransferring}
+                        isCallIncoming={isCallIncoming}
+                        setCallDuration={setCallDuration}
+                        toggleMute={toggleMute}
+                        setDestination={setDestination}
+                        toggleHold={toggleHold}
+                        handleCall={handleCall}
+                        handleEndCall={handleEndCall}
+                        setTransferDestination={setTransferDestination}
+                        setIsTransferring={setIsTransferring}
+                        transferCall={transferCall}
+                        setIsCallIncoming={setIsCallIncoming}
+                        answerCall={answerCall}
+                    />
+                </div>
+            </div>
         </NextLayout>
     );
 }

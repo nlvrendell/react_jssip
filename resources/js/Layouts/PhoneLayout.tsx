@@ -332,7 +332,6 @@ export default function PhoneLayout({ children }: PropsWithChildren) {
                         callDuration={callDuration}
                         setCallDuration={setCallDuration}
                         isMuted={isMuted}
-                        setIsMuted={setIsMuted}
                         isOnHold={isOnHold}
                         setIsOnHold={setIsOnHold}
                         handleCall={handleCall}

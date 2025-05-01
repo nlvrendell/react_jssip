@@ -10,43 +10,61 @@ import {
     Play,
     UserPlus,
     WifiOff,
+    PhoneForwarded,
 } from "lucide-react";
 
 interface PhoneUIProps {
     destination: string;
-    setDestination: (value: string) => void;
     isRegistered: boolean;
     isActiveCall: boolean;
     callDuration: number;
-    setCallDuration: (value: number) => void;
     isMuted: boolean;
-    setIsMuted: (value: boolean) => void;
     isOnHold: boolean;
-    setIsOnHold: (value: boolean) => void;
+    isCallIncoming: boolean;
+    setDestination: (value: string) => void;
+    toggleMute: () => void;
+    setCallDuration: (value: any) => void;
+    toggleHold: () => void;
     handleCall: () => void;
     handleEndCall: () => void;
+    transferDestination: string;
+    isTransferring: boolean;
+    setTransferDestination: (value: string) => void;
+    setIsTransferring: (value: boolean) => void;
+    transferCall: () => void;
+    setIsCallIncoming: (value: boolean) => void;
+    answerCall: () => void;
 }
 
 export function PhoneUI({
     destination,
-    setDestination,
     isRegistered,
     isActiveCall,
     callDuration,
-    setCallDuration,
     isMuted,
-    setIsMuted,
     isOnHold,
-    setIsOnHold,
+    transferDestination,
+    isTransferring,
+    isCallIncoming,
+    setDestination,
+    setCallDuration,
+    toggleMute,
+    toggleHold,
     handleCall,
     handleEndCall,
+    setTransferDestination,
+    setIsTransferring,
+    transferCall,
+    setIsCallIncoming,
+    answerCall,
 }: PhoneUIProps) {
     useEffect(() => {
+        // getMicrophonePermission();
         let interval: NodeJS.Timeout | null = null;
 
         if (isActiveCall) {
             interval = setInterval(() => {
-                setCallDuration(callDuration + 1);
+                setCallDuration((prev: number) => prev + 1);
             }, 1000);
         } else {
             setCallDuration(0);
@@ -55,7 +73,7 @@ export function PhoneUI({
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isActiveCall, setCallDuration]);
+    }, [isActiveCall]);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -63,14 +81,6 @@ export function PhoneUI({
         return `${mins.toString().padStart(2, "0")}:${secs
             .toString()
             .padStart(2, "0")}`;
-    };
-
-    const toggleMute = () => {
-        setIsMuted(!isMuted);
-    };
-
-    const toggleHold = () => {
-        setIsOnHold(!isOnHold);
     };
 
     return (
@@ -128,23 +138,68 @@ export function PhoneUI({
                     </div>
                 )}
 
+                {/* Transfer Destrination Input */}
+                {isActiveCall && isTransferring && (
+                    <div>
+                        <input
+                            type="text"
+                            placeholder="type transfer destination"
+                            className={`my-2 w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-0 rounded-xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all`}
+                            value={transferDestination}
+                            onChange={(e) =>
+                                isActiveCall &&
+                                setTransferDestination(e.target.value)
+                            }
+                        />
+                    </div>
+                )}
+
                 {!isActiveCall ? (
                     // Normal State
-                    <button
-                        className={`w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg ${
-                            !isRegistered || !destination.trim()
-                                ? "opacity-50 cursor-not-allowed hover:bg-emerald-600 hover:scale-100"
-                                : ""
-                        }`}
-                        onClick={handleCall}
-                        disabled={!isRegistered || !destination.trim()}
-                    >
-                        <Phone size={18} />
-                        <span>call</span>
-                    </button>
+                    <>
+                        {isCallIncoming ? (
+                            <>
+                                <button
+                                    className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                                    onClick={answerCall}
+                                >
+                                    <Phone size={18} />
+                                    <span>accept</span>
+                                </button>
+                                <button
+                                    className="w-full mt-2 bg-red-600 hover:bg-red-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                                    onClick={handleEndCall}
+                                >
+                                    <PhoneOff size={18} />
+                                    <span>reject</span>
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                                    onClick={handleCall}
+                                    disabled={!destination.trim()}
+                                >
+                                    <Phone size={18} />
+                                    <span>call</span>
+                                </button>
+                            </>
+                        )}
+                    </>
                 ) : (
                     // Active Call State
                     <div className="space-y-4">
+                        {/* Transfer Button */}
+                        {isActiveCall && isTransferring && (
+                            <button
+                                className="w-full bg-gray-600 hover:bg-green-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                                onClick={transferCall}
+                            >
+                                <PhoneForwarded size={18} />
+                                <span>forward</span>
+                            </button>
+                        )}
                         <button
                             className="w-full bg-red-600 hover:bg-red-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
                             onClick={handleEndCall}
@@ -190,10 +245,17 @@ export function PhoneUI({
                                 </span>
                             </button>
 
-                            <button className="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
+                            <button
+                                className="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                                onClick={() =>
+                                    setIsTransferring(!isTransferring)
+                                }
+                            >
                                 <UserPlus size={20} />
                                 <span className="mt-2 text-xs font-medium">
-                                    Transfer
+                                    {isTransferring
+                                        ? "Cancel Transfer"
+                                        : "Transfer"}
                                 </span>
                             </button>
                         </div>

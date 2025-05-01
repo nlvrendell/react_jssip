@@ -324,7 +324,7 @@ export default function PhoneLayout({ children }: PropsWithChildren) {
 
                 {/* Main Content - Phone UI */}
                 <div className="w-3/4 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-                    <PhoneUI
+                    {/* <PhoneUI
                         destination={destination}
                         setDestination={setDestination}
                         isRegistered={isRegistered}
@@ -337,7 +337,7 @@ export default function PhoneLayout({ children }: PropsWithChildren) {
                         setIsOnHold={setIsOnHold}
                         handleCall={handleCall}
                         handleEndCall={handleEndCall}
-                    />
+                    /> */}
                 </div>
             </div>
         </NextLayout>
