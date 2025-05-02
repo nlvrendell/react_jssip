@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Volume2, Bell, Phone, Monitor, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Volume2, Bell, Phone, Monitor, Shield, MicVocal } from "lucide-react";
+import MicrophoneSelect from "@/Components/Phone/Settings/MicrophoneSelect";
 
 export function Settings() {
     const [audioVolume, setAudioVolume] = useState(80);
@@ -60,6 +61,17 @@ export function Settings() {
                                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                             />
                         </div>
+                    </div>
+                </div>
+
+                {/* Microphone Settings */}
+                <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                        <MicVocal size={16} />
+                        Microphone Settings
+                    </h3>
+                    <div className="space-y-3">
+                        <MicrophoneSelect />
                     </div>
                 </div>
 
