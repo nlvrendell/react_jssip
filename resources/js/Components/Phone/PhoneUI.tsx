@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Phone,
     PhoneOff,
@@ -12,6 +12,10 @@ import {
     WifiOff,
     PhoneForwarded,
 } from "lucide-react";
+import Transcription, {
+    ranscriptionComponentRef,
+} from "@/Components/Phone/Transcription";
+import JsSIP from "jssip";
 
 interface PhoneUIProps {
     destination: string;
@@ -21,6 +25,7 @@ interface PhoneUIProps {
     isMuted: boolean;
     isOnHold: boolean;
     isCallIncoming: boolean;
+    session: JsSIP.RTCSession | null;
     setDestination: (value: string) => void;
     toggleMute: () => void;
     setCallDuration: (value: any) => void;
@@ -46,6 +51,7 @@ export function PhoneUI({
     transferDestination,
     isTransferring,
     isCallIncoming,
+    session,
     setDestination,
     setCallDuration,
     toggleMute,
@@ -58,6 +64,11 @@ export function PhoneUI({
     setIsCallIncoming,
     answerCall,
 }: PhoneUIProps) {
+    const [transcripts, setTranscripts] = useState<string[]>([""]);
+    const transcriptionRef = useRef<ranscriptionComponentRef>(null);
+
+    console.log("session in PhoneUI", session);
+
     useEffect(() => {
         // getMicrophonePermission();
         let interval: NodeJS.Timeout | null = null;
@@ -66,8 +77,11 @@ export function PhoneUI({
             interval = setInterval(() => {
                 setCallDuration((prev: number) => prev + 1);
             }, 1000);
+
+            transcriptionRef.current?.initializeDeepgram(); // listen to voice eonce call is active
         } else {
             setCallDuration(0);
+            transcriptionRef.current?.stopRecording();
         }
 
         return () => {
@@ -81,6 +95,11 @@ export function PhoneUI({
         return `${mins.toString().padStart(2, "0")}:${secs
             .toString()
             .padStart(2, "0")}`;
+    };
+
+    const handleAnswerCall = () => {
+        answerCall();
+        setIsCallIncoming(false);
     };
 
     return (
@@ -168,7 +187,10 @@ export function PhoneUI({
                                 </button>
                                 <button
                                     className="w-full mt-2 bg-red-600 hover:bg-red-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-                                    onClick={handleEndCall}
+                                    onClick={() => {
+                                        handleEndCall();
+                                        console.log("transcripts", transcripts);
+                                    }}
                                 >
                                     <PhoneOff size={18} />
                                     <span>reject</span>
@@ -294,6 +316,12 @@ export function PhoneUI({
                         </div>
                     </div>
                 )}
+            </div>
+            <div className="mt-12 opacity-85">
+                <Transcription
+                    ref={transcriptionRef}
+                    setTranscripts={setTranscripts}
+                />
             </div>
         </div>
     );

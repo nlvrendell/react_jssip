@@ -136,6 +136,8 @@ export default function WebPhone() {
         };
     }, []);
 
+    console.log("currentSession in Webphone", currentSession);
+
     const handleContactSelect = (contact: Contact) => {
         if (isTransferring) {
             setTransferDestination(contact.number);
@@ -350,7 +352,7 @@ export default function WebPhone() {
 
     return (
         <NextLayout>
-            <Head title="Original" />
+            <Head title="WebPhone" />
             <audio id="remoteAudio" autoPlay playsInline />
             <div className="w-full h-screen flex">
                 {/* Left Sidebar */}
@@ -476,6 +478,7 @@ export default function WebPhone() {
                         transferCall={transferCall}
                         setIsCallIncoming={setIsCallIncoming}
                         answerCall={answerCall}
+                        session={currentSession}
                     />
                 </div>
             </div>

@@ -12,6 +12,7 @@ Route::get('/', function () {
             'domain' => config('connectware.domain'),
             'server' => config('connectware.server'),
             'user_agent' => config('connectware.user_agent'),
+            'deepgram_api_key' => config('connectware.deepgram_api_key'),
         ],
     ]);
 });

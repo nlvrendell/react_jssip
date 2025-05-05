@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/Components/ThemeToggle";
 import { ContactsList } from "@/Components/Phone/ContactList";
