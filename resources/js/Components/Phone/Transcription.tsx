@@ -91,10 +91,9 @@ const Transcription = forwardRef<
                     const words = received?.channel?.alternatives[0].words;
 
                     const source =
-                        words?.[0]?.speaker == 0 ? "Local" : "Remote"; // Adjust labels as needed.
+                        words?.[0]?.speaker == 1 ? "Remote" : "Local"; // Adjust labels as needed.
 
                     let speaker = "";
-
                     if (source == "Local") {
                         // the speaker is me
                         speaker = isImCaller ? "Caller" : "Receiver";
