@@ -5,7 +5,8 @@ export function call(
     destinationSIP: string,
     setCurrentSession: (session: JsSIP.RTCSession | null) => void,
     setIsActiveCall: (isActiveCall: boolean) => void,
-    setState: (state: string) => void
+    setState: (state: string) => void,
+    setRemoteStream: (stream: MediaStream | null) => void
 ) {
     const session = ua.call(destinationSIP, {
         mediaConstraints: { audio: true, video: false },
@@ -36,6 +37,7 @@ export function call(
                     audio.play().catch((err) => {
                         console.error("Audio play failed:", err);
                     });
+                    setRemoteStream(e.streams[0]);
                 }
             });
         }
@@ -67,6 +69,7 @@ export function call(
             audio.play().catch((err) => {
                 console.error("Failed to play audio:", err);
             });
+            setRemoteStream(e.streams[0]);
         }
     });
 

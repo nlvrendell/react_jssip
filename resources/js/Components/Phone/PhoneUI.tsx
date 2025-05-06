@@ -13,7 +13,7 @@ import {
     PhoneForwarded,
 } from "lucide-react";
 import Transcription, {
-    ranscriptionComponentRef,
+    TranscriptionComponentRef,
 } from "@/Components/Phone/Transcription";
 import JsSIP from "jssip";
 
@@ -39,6 +39,7 @@ interface PhoneUIProps {
     transferCall: () => void;
     setIsCallIncoming: (value: boolean) => void;
     answerCall: () => void;
+    remoteStream: MediaStream | null;
 }
 
 export function PhoneUI({
@@ -52,6 +53,7 @@ export function PhoneUI({
     isTransferring,
     isCallIncoming,
     session,
+    remoteStream,
     setDestination,
     setCallDuration,
     toggleMute,
@@ -65,20 +67,15 @@ export function PhoneUI({
     answerCall,
 }: PhoneUIProps) {
     const [transcripts, setTranscripts] = useState<string[]>([""]);
-    const transcriptionRef = useRef<ranscriptionComponentRef>(null);
-
-    console.log("session in PhoneUI", session);
+    const transcriptionRef = useRef<TranscriptionComponentRef>(null);
 
     useEffect(() => {
-        // getMicrophonePermission();
         let interval: NodeJS.Timeout | null = null;
 
         if (isActiveCall) {
             interval = setInterval(() => {
                 setCallDuration((prev: number) => prev + 1);
             }, 1000);
-
-            transcriptionRef.current?.initializeDeepgram(); // listen to voice eonce call is active
         } else {
             setCallDuration(0);
             transcriptionRef.current?.stopRecording();
@@ -97,10 +94,11 @@ export function PhoneUI({
             .padStart(2, "0")}`;
     };
 
-    const handleAnswerCall = () => {
-        answerCall();
-        setIsCallIncoming(false);
-    };
+    useEffect(() => {
+        if (remoteStream && transcriptionRef.current && isActiveCall) {
+            transcriptionRef.current.initializeDeepgram(remoteStream);
+        }
+    }, [remoteStream]);
 
     return (
         <div className="w-full max-w-lg m-auto bg-gray-50 dark:bg-gray-900">
@@ -320,6 +318,7 @@ export function PhoneUI({
             <div className="mt-12 opacity-85">
                 <Transcription
                     ref={transcriptionRef}
+                    isActiveCall={isActiveCall}
                     setTranscripts={setTranscripts}
                 />
             </div>

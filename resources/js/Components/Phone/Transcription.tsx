@@ -3,18 +3,19 @@ import { forwardRef, useImperativeHandle, useState } from "react";
 
 export type TranscriptionComponentProps = {
     setTranscripts?: (message: string[]) => void;
+    isActiveCall?: boolean;
 };
 
 // Define what functions will be exposed to the parent via ref
-export type ranscriptionComponentRef = {
-    initializeDeepgram: () => void;
+export type TranscriptionComponentRef = {
+    initializeDeepgram: (remoteStream: MediaStream | null) => void;
     stopRecording: () => void;
 };
 
 const Transcription = forwardRef<
-    ranscriptionComponentRef,
+    TranscriptionComponentRef,
     TranscriptionComponentProps
->(({ setTranscripts }, ref) => {
+>(({ setTranscripts, isActiveCall }, ref) => {
     const [socket, setSocket] = useState<WebSocket>();
     const [scripts, setScripts] = useState<string[]>([""]);
     const [microphone, setMicrophone] = useState<MediaRecorder>(
@@ -28,19 +29,48 @@ const Transcription = forwardRef<
 
     let currentStream: MediaStream;
 
-    const initializeDeepgram = () => {
+    const initializeDeepgram = (remoteStream: MediaStream | null) => {
         navigator.mediaDevices
             .getUserMedia({ audio: true })
-            .then((stream: MediaStream) => {
-                currentStream = stream;
-                console.log("currentStream", currentStream);
+            .then((localStream: MediaStream) => {
+                currentStream = new MediaStream();
 
-                let newMicrophone = new MediaRecorder(stream, {
+                const audioContext = new AudioContext();
+                const destination = audioContext.createMediaStreamDestination();
+
+                console.log("currentStream", currentStream);
+                console.log("remoteStream", remoteStream);
+
+                // Add local mic audio tracks
+                // localStream.getAudioTracks().forEach((track) => {
+                //     currentStream.addTrack(track);
+                // });
+                // Local mic
+                const localSource =
+                    audioContext.createMediaStreamSource(localStream);
+                localSource.connect(destination);
+
+                // Add remote audio tracks
+                // if (remoteStream) {
+                //     remoteStream.getAudioTracks().forEach((track) => {
+                //         currentStream.addTrack(track);
+                //     });
+                // }
+
+                if (remoteStream) {
+                    const remoteSource =
+                        audioContext.createMediaStreamSource(remoteStream);
+                    remoteSource.connect(destination);
+                }
+
+                const mixedStream = destination.stream;
+
+                let newMicrophone = new MediaRecorder(mixedStream, {
                     mimeType: "audio/webm",
                 });
 
                 let newSocket = new WebSocket(
-                    "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true",
+                    "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true",
                     ["token", config?.deepgram_api_key]
                 );
 
@@ -64,7 +94,11 @@ const Transcription = forwardRef<
                     const transcript =
                         received?.channel?.alternatives[0].transcript;
 
-                    if (transcript && currentTranscript != transcript) {
+                    if (
+                        transcript &&
+                        currentTranscript != transcript &&
+                        isActiveCall
+                    ) {
                         setCurrentTranscript(transcript);
                         setScripts((prev) => [...prev, transcript]);
 
@@ -114,11 +148,7 @@ const Transcription = forwardRef<
         stopRecording,
     }));
 
-    return (
-        <div>
-            <h1>{currentTranscript}</h1>
-        </div>
-    );
+    return <div>{isActiveCall && <h1>{currentTranscript}</h1>}</div>;
 });
 
 export default Transcription;

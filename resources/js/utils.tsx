@@ -14,7 +14,8 @@ export function createSipUA(
     setIsCallIncoming: (status: boolean) => void,
     setState: (state: string) => void,
     handleEndCall: () => void,
-    setDestination: (destination: string) => void
+    setDestination: (destination: string) => void,
+    setRemoteStream: (stream: MediaStream | null) => void
 ) {
     const socket = new JsSIP.WebSocketInterface(config.wsServers);
     // JsSIP.debug.enable("JsSIP:*");
@@ -45,23 +46,32 @@ export function createSipUA(
     userAgent.on("newRTCSession", (e: any) => {
         const session = e.session;
         setDestination(session.remote_identity._uri._user);
+
         if (e.originator === "remote") {
             setIsCallIncoming(true);
             setState("Incoming Call..");
 
-            session.on("peerconnection", () => {
+            let remoteStream = new MediaStream();
+
+            session.on("peerconnection", (e: any) => {
                 console.log("RTCPeerConnection created");
+
                 session.connection?.addEventListener("track", (event: any) => {
                     const remoteAudio = document.getElementById(
                         "remoteAudio"
                     ) as HTMLAudioElement;
+
                     if (remoteAudio && event.streams[0]) {
                         remoteAudio.srcObject = event.streams[0];
                         remoteAudio.play().catch((err) => {
                             console.error("Audio playback failed:", err);
                         });
+
+                        setRemoteStream(event.streams[0]);
                     }
                 });
+
+                const pc = e.peerconnection;
             });
 
             // Event when the call ends

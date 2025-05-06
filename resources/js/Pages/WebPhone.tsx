@@ -102,6 +102,7 @@ export default function WebPhone() {
     const [isTransferring, setIsTransferring] = useState(false);
     const [transferDestination, setTransferDestination] = useState("");
     const [isCallIncoming, setIsCallIncoming] = useState(false);
+    const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
 
     const config = usePage().props.config as {
         domain: string;
@@ -126,7 +127,8 @@ export default function WebPhone() {
             setIsCallIncoming,
             setState,
             handleEndCall,
-            setDestination
+            setDestination,
+            setRemoteStream
         );
         setUa(userAgent);
 
@@ -135,8 +137,6 @@ export default function WebPhone() {
             userAgent.stop();
         };
     }, []);
-
-    console.log("currentSession in Webphone", currentSession);
 
     const handleContactSelect = (contact: Contact) => {
         if (isTransferring) {
@@ -169,7 +169,8 @@ export default function WebPhone() {
                 destinationSIP,
                 setCurrentSession,
                 setIsActiveCall,
-                setState
+                setState,
+                setRemoteStream
             );
 
             // Add to call history
@@ -479,6 +480,7 @@ export default function WebPhone() {
                         setIsCallIncoming={setIsCallIncoming}
                         answerCall={answerCall}
                         session={currentSession}
+                        remoteStream={remoteStream}
                     />
                 </div>
             </div>
