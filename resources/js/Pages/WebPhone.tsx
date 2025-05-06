@@ -103,6 +103,7 @@ export default function WebPhone() {
     const [transferDestination, setTransferDestination] = useState("");
     const [isCallIncoming, setIsCallIncoming] = useState(false);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+    const [isImCaller, setIsImCaller] = useState(false);
 
     const config = usePage().props.config as {
         domain: string;
@@ -173,6 +174,8 @@ export default function WebPhone() {
                 setRemoteStream
             );
 
+            setIsImCaller(true);
+
             // Add to call history
             const contact = contacts.find(
                 (c) =>
@@ -202,6 +205,7 @@ export default function WebPhone() {
         setIsTransferring(false);
         setTransferDestination("");
         setDestination("");
+        setIsImCaller(false);
 
         // Update the duration of the most recent call
         setCallHistory((prev) => {
@@ -481,6 +485,7 @@ export default function WebPhone() {
                         answerCall={answerCall}
                         session={currentSession}
                         remoteStream={remoteStream}
+                        isImCaller={isImCaller}
                     />
                 </div>
             </div>

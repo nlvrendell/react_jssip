@@ -40,6 +40,7 @@ interface PhoneUIProps {
     setIsCallIncoming: (value: boolean) => void;
     answerCall: () => void;
     remoteStream: MediaStream | null;
+    isImCaller: boolean;
 }
 
 export function PhoneUI({
@@ -54,6 +55,7 @@ export function PhoneUI({
     isCallIncoming,
     session,
     remoteStream,
+    isImCaller,
     setDestination,
     setCallDuration,
     toggleMute,
@@ -319,6 +321,7 @@ export function PhoneUI({
                 <Transcription
                     ref={transcriptionRef}
                     isActiveCall={isActiveCall}
+                    isImCaller={isImCaller}
                     setTranscripts={setTranscripts}
                 />
             </div>

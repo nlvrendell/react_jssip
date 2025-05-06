@@ -4,6 +4,7 @@ import { forwardRef, useImperativeHandle, useState } from "react";
 export type TranscriptionComponentProps = {
     setTranscripts?: (message: string[]) => void;
     isActiveCall?: boolean;
+    isImCaller?: boolean;
 };
 
 // Define what functions will be exposed to the parent via ref
@@ -15,13 +16,17 @@ export type TranscriptionComponentRef = {
 const Transcription = forwardRef<
     TranscriptionComponentRef,
     TranscriptionComponentProps
->(({ setTranscripts, isActiveCall }, ref) => {
+>(({ setTranscripts, isActiveCall, isImCaller }, ref) => {
     const [socket, setSocket] = useState<WebSocket>();
     const [scripts, setScripts] = useState<string[]>([""]);
     const [microphone, setMicrophone] = useState<MediaRecorder>(
         new MediaRecorder(new MediaStream())
     );
     const [currentTranscript, setCurrentTranscript] = useState("");
+    const [scriptsFromCaller, setScriptsFromCaller] = useState<string[]>([""]);
+    const [scriptsFromReceiver, setScriptsFromReceiver] = useState<string[]>([
+        "",
+    ]);
 
     const config = usePage().props.config as {
         deepgram_api_key: string;
@@ -70,7 +75,9 @@ const Transcription = forwardRef<
                 });
 
                 let newSocket = new WebSocket(
-                    "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true",
+                    // "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true&diarize=true&utterances=true",
+                    // "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true&diarize=true&multichannel=true",
+                    "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true&utterances=true&diarize=true",
                     ["token", config?.deepgram_api_key]
                 );
 
@@ -83,8 +90,7 @@ const Transcription = forwardRef<
                     );
 
                     // Start recording audio in 150ms chunks. The audio will be sent to the deepgram server
-                    // as it is recorded. The server will then return a transcript of what was said.
-                    newMicrophone?.start(50);
+                    newMicrophone?.start(100);
 
                     setMicrophone(newMicrophone);
                 };
@@ -94,12 +100,37 @@ const Transcription = forwardRef<
                     const transcript =
                         received?.channel?.alternatives[0].transcript;
 
+                    const words = received?.channel?.alternatives[0].words;
+
+                    const source =
+                        words?.[0]?.speaker == 0 ? "Local" : "Remote"; // Adjust labels as needed.
+
+                    let speaker = "";
+
+                    if (source == "Local") {
+                        // the speaker is me
+                        speaker = isImCaller ? "Caller" : "Receiver";
+                    } else {
+                        // the speaker is the other person
+                        speaker = isImCaller ? "Receiver" : "Caller";
+                    }
+
                     if (
                         transcript &&
                         currentTranscript != transcript &&
                         isActiveCall
                     ) {
-                        setCurrentTranscript(transcript);
+                        const labeledTranscript = `${speaker}: ${transcript}`;
+                        console.log("received", {
+                            message: message,
+                            received: received,
+                            channel: received?.channel,
+                            localStream: localStream,
+                            remoteStream: remoteStream,
+                            labeledTranscript: labeledTranscript,
+                        });
+
+                        setCurrentTranscript(labeledTranscript);
                         setScripts((prev) => [...prev, transcript]);
 
                         if (
@@ -107,8 +138,19 @@ const Transcription = forwardRef<
                             setTranscripts !== undefined
                         ) {
                             setTranscripts(scripts);
+                            if (speaker == "Caller") {
+                                setScriptsFromCaller((prev) => [
+                                    ...prev,
+                                    transcript,
+                                ]);
+                            } else {
+                                setScriptsFromReceiver((prev) => [
+                                    ...prev,
+                                    transcript,
+                                ]);
+                            }
                         }
-                        console.log(transcript);
+                        console.log(labeledTranscript);
                     }
                 };
 
@@ -124,7 +166,11 @@ const Transcription = forwardRef<
             }
         });
 
-        console.log("recoreded transription", scripts.join(","));
+        console.log({
+            all: scripts.join(","),
+            scriptsFromCaller: scriptsFromCaller.join(","),
+            scriptsFromReceiver: scriptsFromReceiver.join(","),
+        });
 
         microphone.stop();
         socket?.close();
