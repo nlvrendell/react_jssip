@@ -46,21 +46,9 @@ const Transcription = forwardRef<
                 console.log("currentStream", currentStream);
                 console.log("remoteStream", remoteStream);
 
-                // Add local mic audio tracks
-                // localStream.getAudioTracks().forEach((track) => {
-                //     currentStream.addTrack(track);
-                // });
-                // Local mic
                 const localSource =
                     audioContext.createMediaStreamSource(localStream);
                 localSource.connect(destination);
-
-                // Add remote audio tracks
-                // if (remoteStream) {
-                //     remoteStream.getAudioTracks().forEach((track) => {
-                //         currentStream.addTrack(track);
-                //     });
-                // }
 
                 if (remoteStream) {
                     const remoteSource =
@@ -75,9 +63,7 @@ const Transcription = forwardRef<
                 });
 
                 let newSocket = new WebSocket(
-                    // "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true&diarize=true&utterances=true",
-                    // "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true&diarize=true&multichannel=true",
-                    "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true&utterances=true&diarize=true",
+                    "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true&utterances=true&multichannel=true&diarize=true",
                     ["token", config?.deepgram_api_key]
                 );
 
@@ -85,7 +71,9 @@ const Transcription = forwardRef<
                     newMicrophone?.addEventListener(
                         "dataavailable",
                         (event) => {
-                            newSocket?.send(event.data);
+                            if (isActiveCall) {
+                                newSocket?.send(event.data);
+                            }
                         }
                     );
 
@@ -154,26 +142,28 @@ const Transcription = forwardRef<
                     }
                 };
 
-                setSocket(socket);
+                setSocket(newSocket);
             });
     };
 
     const stopRecording = () => {
-        // stops the stream
-        currentStream?.getTracks().forEach((track) => {
-            if (track.readyState == "live") {
-                track.stop();
-            }
-        });
-
         console.log({
             all: scripts.join(","),
             scriptsFromCaller: scriptsFromCaller.join(","),
             scriptsFromReceiver: scriptsFromReceiver.join(","),
         });
 
-        microphone.stop();
-        socket?.close();
+        if (microphone && microphone.state === "recording") {
+            microphone.stop();
+            console.log("MediaRecorder stopped.");
+        }
+
+        // Close the WebSocket connection
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.close();
+            console.log("Deepgram WebSocket closed.");
+        }
+
         stopStream();
         setScripts([""]);
         setCurrentTranscript("");
