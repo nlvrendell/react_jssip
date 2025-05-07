@@ -19,7 +19,6 @@ export function call(
 
     session.on("accepted", () => {
         console.log("Call accepted!");
-        setIsActiveCall(true);
     });
 
     session.on("confirmed", () => {

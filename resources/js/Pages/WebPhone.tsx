@@ -163,6 +163,8 @@ export default function WebPhone() {
                 return;
             }
 
+            setIsActiveCall(true);
+
             const destinationSIP = `sip:${destination.trim()}@${config.domain}`;
 
             call(
