@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -27,7 +29,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'username' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -37,15 +39,41 @@ class LoginRequest extends FormRequest
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function authenticate(): void
+    public function authenticate()
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+        $credentials = [
+            'grant_type' => 'password',
+            'client_id' => config('connectware.client_id'),
+            'client_secret' => config('connectware.client_secret'),
+            'username' => request()->input('username'),
+            'password' => request()->input('password'),
+        ];
 
+        $response = Http::withoutVerifying()
+            ->asForm()
+            ->post(config('connectware.api').'/ns-api/oauth2/token', $credentials);
+
+        if ($response->ok()) {
+            $user = User::where('connectware_id', $response['uid'])->first();
+
+            if (! $user) {
+                $user = User::create([
+                    'name' => $response['displayName'],
+                    'email' => $response['user_email'],
+                    'connectware_id' => $response['uid'],
+                    'password' => bcrypt(request()->input('password')),
+                    'access_token' => $response['access_token'],
+                    'refresh_token' => $response['refresh_token'],
+                    'meta' => json_encode($response),
+                ]);
+            }
+
+            Auth::login($user);
+        } else {
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'username' => __('auth.failed'),
             ]);
         }
 

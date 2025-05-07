@@ -1,3 +1,4 @@
+import { Link } from "@inertiajs/react";
 import { WifiOff, Wifi } from "lucide-react";
 
 interface UserInfoProps {
@@ -44,6 +45,14 @@ export function UserInfo({ isRegistered }: UserInfoProps) {
                     )}
                 </button>
             </div>
+            <Link
+                href={route("logout")}
+                method="post"
+                as="button"
+                className="mt-2 text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white py-2 px-3 rounded-md transition-colors"
+            >
+                Log Out
+            </Link>
         </div>
     );
 }
