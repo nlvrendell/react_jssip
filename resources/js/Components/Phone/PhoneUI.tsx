@@ -201,7 +201,7 @@ export function PhoneUI({
                                 <button
                                     className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
                                     onClick={handleCall}
-                                    disabled={!destination.trim()}
+                                    disabled={!destination?.trim()}
                                 >
                                     <Phone size={18} />
                                     <span>call</span>

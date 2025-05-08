@@ -88,7 +88,10 @@ export default function Login({
                                     className="mt-2"
                                 />
                             </div>
-                            <PrimaryButton disabled={processing}>
+                            <PrimaryButton
+                                disabled={processing}
+                                className="dark:bg-gray-700 dark:hover:bg-gray-900"
+                            >
                                 Log in
                             </PrimaryButton>
                         </form>

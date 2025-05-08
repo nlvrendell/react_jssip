@@ -18,12 +18,6 @@ class HandleGetAccessTokenService
 
     public function getAccessToken(): ?array
     {
-        $cwTokenResponse = cache('cw_token_response');
-
-        if ($cwTokenResponse) {
-            return $cwTokenResponse;
-        }
-
         $config = [
             'grant_type' => 'refresh_token',
             'client_id' => config('connectware.client_id'),
@@ -42,7 +36,9 @@ class HandleGetAccessTokenService
             'refresh_token' => $response['refresh_token'],
         ]);
 
-        cache()->put('cw_token_response', $response->json(), now()->addMinutes(60));
+        logger('Connectware access token updated');
+
+        cache()->put('cw_token_response', $response->json(), now()->addMinutes(50));
 
         return $response->json();
     }

@@ -33,6 +33,9 @@ export default function WebPhone() {
     const [isCallIncoming, setIsCallIncoming] = useState(false);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [isImCaller, setIsImCaller] = useState(false);
+    const [callHistory, setCallHistory] = useState(
+        usePage().props.callHistory as CallHistoryItem[]
+    );
 
     const config = usePage().props.config as {
         domain: string;
@@ -44,7 +47,7 @@ export default function WebPhone() {
 
     const contacts = usePage().props.contacts as Contact[];
 
-    const callHistory = usePage().props.callHistory as CallHistoryItem[];
+    const authUser = usePage().props.auth.user as any;
 
     useEffect(() => {
         const uaConfig = {
@@ -82,11 +85,17 @@ export default function WebPhone() {
     };
 
     const handleHistorySelect = (item: CallHistoryItem) => {
+        var destination = item.CdrR.orig_sub;
+        if (item.type == CallHistoryTypeEnum.OUTBOUND) {
+            destination = item.CdrR.orig_req_user;
+        }
+
         if (isTransferring) {
-            setTransferDestination(item.CdrR.orig_sub);
+            setTransferDestination(destination);
             return;
         }
-        setDestination(item.CdrR.orig_sub);
+
+        setDestination(destination);
     };
 
     const handleCall = () => {
@@ -123,19 +132,23 @@ export default function WebPhone() {
                         .includes(destination.toLowerCase())
             );
 
-            // const newCall: CallHistoryItem = {
-            //     cdr_id: Date.now().toString(),
-            //     name:
-            //         (contact?.first_name || "") +
-            //         " " +
-            //         (contact?.last_name || "Unknown"),
-            //     number: contact?.user || destination,
-            //     timestamp: new Date(),
-            //     type: CallHistoryTypeEnum.OUTBOUND,
-            //     duration: 0,
-            // };
+            const newCall: CallHistoryItem = {
+                cdr_id: Date.now().toString(),
+                first_name: contact?.first_name || "",
+                last_name: contact?.last_name || "",
+                number: contact?.user || destination,
+                time_start: Math.floor(Date.now() / 1000).toString(),
+                time_release: Math.floor(Date.now() / 1000).toString(),
+                type: CallHistoryTypeEnum.OUTBOUND,
+                duration: 0,
+                CdrR: {
+                    orig_from_name: authUser?.name,
+                    orig_sub: authUser?.meta.user,
+                    orig_req_user: destination.trim(),
+                },
+            };
 
-            // setCallHistory((prev) => [newCall, ...prev]);
+            setCallHistory((prev) => [newCall, ...prev]);
         }
     };
 
@@ -152,13 +165,13 @@ export default function WebPhone() {
         setIsImCaller(false);
 
         // Update the duration of the most recent call
-        // setCallHistory((prev) => {
-        //     const updated = [...prev];
-        //     if (updated[0]) {
-        //         updated[0] = { ...updated[0], duration: callDuration };
-        //     }
-        //     return updated;
-        // });
+        setCallHistory((prev) => {
+            const updated = [...prev];
+            if (updated[0]) {
+                updated[0] = { ...updated[0], duration: callDuration };
+            }
+            return updated;
+        });
     };
 
     const getContactNameThroughUser = (user: string) => {
@@ -314,7 +327,25 @@ export default function WebPhone() {
             //     duration: 0,
             // };
 
-            // setCallHistory((prev) => [newCall, ...prev]);
+            const newCall: CallHistoryItem = {
+                cdr_id: Date.now().toString(),
+                first_name: "",
+                last_name: "",
+                number: contact?.user || destination,
+                time_start: Math.floor(Date.now() / 1000).toString(),
+                time_release: Math.floor(Date.now() / 1000).toString(),
+                type: CallHistoryTypeEnum.INBOUND,
+                duration: 0,
+                CdrR: {
+                    orig_from_name: contact
+                        ? contact?.first_name + " " + contact?.last_name
+                        : "Unknown",
+                    orig_sub: destination.trim(),
+                    orig_req_user: authUser?.meta.user,
+                },
+            };
+
+            setCallHistory((prev) => [newCall, ...prev]);
         }
     };
 
