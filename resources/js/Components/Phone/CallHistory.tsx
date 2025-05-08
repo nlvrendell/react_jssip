@@ -66,11 +66,11 @@ export function CallHistory({
 
     const getCallIcon = (type: string) => {
         switch (type) {
-            case "0":
+            case CallHistoryTypeEnum.OUTBOUND:
                 return <PhoneIncoming size={16} className="text-emerald-500" />;
-            case "1":
+            case CallHistoryTypeEnum.INBOUND:
                 return <PhoneOutgoing size={16} className="text-blue-500" />;
-            case "2":
+            case CallHistoryTypeEnum.MISSED:
                 return <PhoneMissed size={16} className="text-red-500" />;
             default:
                 return null;
@@ -99,7 +99,7 @@ export function CallHistory({
                         <div className="flex-1">
                             <div className="font-medium text-gray-900 dark:text-white text-sm">
                                 {getCallName(item)}
-                                {item.type === "2" && (
+                                {item.type == CallHistoryTypeEnum.MISSED && (
                                     <span className="text-red-500 dark:text-red-400">
                                         {" "}
                                         (Missed)
