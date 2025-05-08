@@ -15,16 +15,19 @@ export type PageProps<
 
 export interface Contact {
     id: string;
-    name: string;
-    number: string;
-    avatar: string;
+    first_name: string;
+    last_name: string;
+    user: string;
+    presence: string;
 }
 
 export interface CallHistoryItem {
-    id: string;
+    cdr_id: string;
     name: string;
     number: string;
-    timestamp: Date;
-    type: "incoming" | "outgoing" | "missed";
+    time_start: string;
+    time_release: string;
+    type: "0" | "1" | "2"; // 0 = incoming, 1 = outgoing, 2 = missed
     duration: number;
+    CdrR: { orig_from_name: string; orig_sub: string, orig_req_user: string };
 }

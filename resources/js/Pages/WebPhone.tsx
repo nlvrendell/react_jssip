@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/Components/ThemeToggle";
 import { ContactsList } from "@/Components/Phone/ContactList";
@@ -16,78 +14,9 @@ import { Head, usePage } from "@inertiajs/react";
 import { createSipUA } from "@/utils";
 import JsSIP from "jssip";
 import { call } from "@/uitls/phone";
-
-// Mock data
-const mockContacts: Contact[] = [
-    { id: "1", name: "John Smith", number: "108", avatar: "JS" },
-    { id: "2", name: "Sarah Johnson", number: "100", avatar: "SJ" },
-    { id: "3", name: "Michael Brown", number: "1050", avatar: "MB" },
-    { id: "4", name: "Emily Davis", number: "456-789-0123", avatar: "ED" },
-    { id: "5", name: "David Wilson", number: "567-890-1234", avatar: "DW" },
-    { id: "6", name: "Jessica Taylor", number: "678-901-2345", avatar: "JT" },
-    { id: "7", name: "Robert Martinez", number: "789-012-3456", avatar: "RM" },
-    {
-        id: "8",
-        name: "Jennifer Anderson",
-        number: "890-123-4567",
-        avatar: "JA",
-    },
-    {
-        id: "9",
-        name: "Christopher Thomas",
-        number: "901-234-5678",
-        avatar: "CT",
-    },
-    { id: "10", name: "Lisa Jackson", number: "012-345-6789", avatar: "LJ" },
-];
-
-const initialCallHistory: CallHistoryItem[] = [
-    {
-        id: "1",
-        name: "John Smith",
-        number: "123-456-7890",
-        timestamp: new Date(Date.now() - 1000 * 60 * 15),
-        type: "outgoing",
-        duration: 125,
-    },
-    {
-        id: "2",
-        name: "Unknown",
-        number: "234-567-8901",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        type: "missed",
-        duration: 0,
-    },
-    {
-        id: "3",
-        name: "Sarah Johnson",
-        number: "345-678-9012",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5),
-        type: "incoming",
-        duration: 312,
-    },
-    {
-        id: "4",
-        name: "Michael Brown",
-        number: "456-789-0123",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-        type: "outgoing",
-        duration: 45,
-    },
-    {
-        id: "5",
-        name: "Emily Davis",
-        number: "567-890-1234",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-        type: "incoming",
-        duration: 189,
-    },
-];
+import { CallHistoryTypeEnum } from "@/types/enum";
 
 export default function WebPhone() {
-    const [contacts] = useState<Contact[]>(mockContacts);
-    const [callHistory, setCallHistory] =
-        useState<CallHistoryItem[]>(initialCallHistory);
     const [destination, setDestination] = useState("");
     const [isRegistered, setIsRegistered] = useState(false);
     const [isActiveCall, setIsActiveCall] = useState(false);
@@ -112,6 +41,10 @@ export default function WebPhone() {
         server: string;
         user_agent: string;
     };
+
+    const contacts = usePage().props.contacts as Contact[];
+
+    const callHistory = usePage().props.callHistory as CallHistoryItem[];
 
     useEffect(() => {
         const uaConfig = {
@@ -141,19 +74,19 @@ export default function WebPhone() {
 
     const handleContactSelect = (contact: Contact) => {
         if (isTransferring) {
-            setTransferDestination(contact.number);
+            setTransferDestination(contact?.user);
             return;
         }
 
-        setDestination(contact.number);
+        setDestination(contact.user);
     };
 
     const handleHistorySelect = (item: CallHistoryItem) => {
         if (isTransferring) {
-            setTransferDestination(item.number);
+            setTransferDestination(item.CdrR.orig_sub);
             return;
         }
-        setDestination(item.number);
+        setDestination(item.CdrR.orig_sub);
     };
 
     const handleCall = () => {
@@ -181,19 +114,28 @@ export default function WebPhone() {
             // Add to call history
             const contact = contacts.find(
                 (c) =>
-                    c.number === destination ||
-                    c.name.toLowerCase().includes(destination.toLowerCase())
+                    c.user === destination ||
+                    c.first_name
+                        .toLowerCase()
+                        .includes(destination.toLowerCase()) ||
+                    c.last_name
+                        .toLowerCase()
+                        .includes(destination.toLowerCase())
             );
-            const newCall: CallHistoryItem = {
-                id: Date.now().toString(),
-                name: contact?.name || "Unknown",
-                number: contact?.number || destination,
-                timestamp: new Date(),
-                type: "outgoing",
-                duration: 0,
-            };
 
-            setCallHistory((prev) => [newCall, ...prev]);
+            // const newCall: CallHistoryItem = {
+            //     cdr_id: Date.now().toString(),
+            //     name:
+            //         (contact?.first_name || "") +
+            //         " " +
+            //         (contact?.last_name || "Unknown"),
+            //     number: contact?.user || destination,
+            //     timestamp: new Date(),
+            //     type: CallHistoryTypeEnum.OUTBOUND,
+            //     duration: 0,
+            // };
+
+            // setCallHistory((prev) => [newCall, ...prev]);
         }
     };
 
@@ -210,13 +152,21 @@ export default function WebPhone() {
         setIsImCaller(false);
 
         // Update the duration of the most recent call
-        setCallHistory((prev) => {
-            const updated = [...prev];
-            if (updated[0]) {
-                updated[0] = { ...updated[0], duration: callDuration };
-            }
-            return updated;
-        });
+        // setCallHistory((prev) => {
+        //     const updated = [...prev];
+        //     if (updated[0]) {
+        //         updated[0] = { ...updated[0], duration: callDuration };
+        //     }
+        //     return updated;
+        // });
+    };
+
+    const getContactNameThroughUser = (user: string) => {
+        let contact = contacts.find((c) => c.user === user);
+
+        return contact
+            ? contact.first_name + " " + contact.last_name
+            : "Unknown";
     };
 
     // Render the active section content
@@ -242,10 +192,13 @@ export default function WebPhone() {
             case "history":
                 return (
                     <div className="flex flex-col h-full">
-                        <div className="flex-1 overflow-hidden">
+                        <div className="flex-1 overflow-y-auto">
                             <CallHistory
                                 history={callHistory}
                                 onSelect={handleHistorySelect}
+                                getContactNameThroughUser={
+                                    getContactNameThroughUser
+                                }
                             />
                         </div>
                     </div>
@@ -340,20 +293,28 @@ export default function WebPhone() {
 
             const contact = contacts.find(
                 (c) =>
-                    c.number === destination.replace(/wp$/, "") ||
-                    c.name.toLowerCase().includes(destination.toLowerCase())
+                    c.user === destination.replace(/wp$/, "") ||
+                    c.first_name
+                        .toLowerCase()
+                        .includes(destination.toLowerCase()) ||
+                    c.last_name
+                        .toLowerCase()
+                        .includes(destination.toLowerCase())
             );
 
-            const newCall: CallHistoryItem = {
-                id: Date.now().toString(),
-                name: contact?.name || "Unknown",
-                number: contact?.number || destination,
-                timestamp: new Date(),
-                type: "outgoing",
-                duration: 0,
-            };
+            // const newCall: CallHistoryItem = {
+            //     id: Date.now().toString(),
+            //     name:
+            //         (contact?.first_name || "") +
+            //         " " +
+            //         (contact?.last_name || "Unknown"),
+            //     number: contact?.user || destination,
+            //     timestamp: new Date(),
+            //     type: "outgoing",
+            //     duration: 0,
+            // };
 
-            setCallHistory((prev) => [newCall, ...prev]);
+            // setCallHistory((prev) => [newCall, ...prev]);
         }
     };
 

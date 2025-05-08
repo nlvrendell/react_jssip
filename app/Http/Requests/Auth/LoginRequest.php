@@ -66,7 +66,13 @@ class LoginRequest extends FormRequest
                     'password' => bcrypt(request()->input('password')),
                     'access_token' => $response['access_token'],
                     'refresh_token' => $response['refresh_token'],
-                    'meta' => json_encode($response),
+                    'meta' => $response->json(),
+                ]);
+            } else {
+                $user->update([
+                    'access_token' => $response['access_token'],
+                    'refresh_token' => $response['refresh_token'],
+                    'meta' => $response->json(),
                 ]);
             }
 
