@@ -27,16 +27,13 @@ class HandleGetAccessTokenService
 
         // request new access token
         $response = Http::withoutVerifying()
-            ->asForm()
-            ->post(config('connectware.api').'/ns-api/oauth2/token/', $config)
+            ->post(config('connectware.api').'/ns-api/v2/tokens', $config)
             ->throw();
 
         auth()->user()->update([
             'access_token' => $response['access_token'],
             'refresh_token' => $response['refresh_token'],
         ]);
-
-        logger('Connectware access token updated');
 
         cache()->put('cw_token_response', $response->json(), now()->addMinutes(50));
 

@@ -52,8 +52,7 @@ class LoginRequest extends FormRequest
         ];
 
         $response = Http::withoutVerifying()
-            ->asForm()
-            ->post(config('connectware.api').'/ns-api/oauth2/token', $credentials);
+            ->post(config('connectware.api').'/ns-api/v2/tokens', $credentials);
 
         if ($response->ok()) {
             $user = User::where('connectware_id', $response['uid'])->first();
