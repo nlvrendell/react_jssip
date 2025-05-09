@@ -34,12 +34,12 @@ export default function Login({
             <div className="w-full h-screen flex bg-gray-50 dark:bg-gray-900">
                 <Head title="Log in" />
 
-                {status && (
-                    <div className="mb-4 text-sm font-medium text-green-600">
-                        {status}
-                    </div>
-                )}
                 <div className="w-full max-w-lg m-auto bg-gray-50 dark:bg-gray-900">
+                    {status && (
+                        <div className=" text-red-700  dark:text-red-400 rounded-3xl mb-2 p-4 text-center">
+                            {status}
+                        </div>
+                    )}
                     <div className="phone-container bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                         <form onSubmit={submit}>
                             <div className="mb-6">

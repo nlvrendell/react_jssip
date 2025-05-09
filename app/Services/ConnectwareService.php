@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Inertia\Inertia;
 
 class ConnectwareService
 {
@@ -17,10 +20,18 @@ class ConnectwareService
 
     public function makeHttpRequest(?string $url = null, array $data = [])
     {
+
         $response = $this->http
             ->asForm()
             ->post($url, $data)
             ->throw();
+
+        // expired token
+        if ($response->status() === 401) {
+            $this->logout();
+
+            return;
+        }
 
         return $response->json();
     }
@@ -63,6 +74,21 @@ class ConnectwareService
             'action' => 'read',
             'uid' => auth()->user()->connectware_id,
             'limit' => '50',
+        ]);
+    }
+
+    public function logout()
+    {
+        Auth::guard('web')->logout();
+
+        request()->session()->invalidate();
+
+        request()->session()->regenerateToken();
+
+        Cache::forget('connectware_access_token');
+
+        return Inertia::render('Auth/Login', [
+            'status' => 'Session Expired. Please login again',
         ]);
     }
 }
