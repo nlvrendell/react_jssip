@@ -87,6 +87,17 @@ class ConnectwareService
         ]);
     }
 
+    public function listParks()
+    {
+        return $this->makeHttpRequest('', [
+            'object' => 'callqueue',
+            'action' => 'list',
+            'domain' => request()->user()->meta['domain'],
+            'type' => 'park',
+            'format' => 'json',
+        ]);
+    }
+
     public function logout()
     {
         Auth::guard('web')->logout();
