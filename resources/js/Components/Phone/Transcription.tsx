@@ -9,7 +9,8 @@ export type TranscriptionComponentProps = {
 
 // Define what functions will be exposed to the parent via ref
 export type TranscriptionComponentRef = {
-    initializeDeepgram: (remoteStream: MediaStream | null) => void;
+    initializeDeepgram: () => void;
+    initializeRemoteStream: (remoteStream: MediaStream) => void;
     stopRecording: () => void;
 };
 
@@ -28,33 +29,29 @@ const Transcription = forwardRef<
         "",
     ]);
 
+    const [remoteSocket, setRemoteSocket] = useState<WebSocket>();
+    const [remoteMicrophone, setRemoteMicrophone] = useState<MediaRecorder>(
+        new MediaRecorder(new MediaStream())
+    );
+
     const config = usePage().props.config as {
         deepgram_api_key: string;
     };
 
     let currentStream: MediaStream;
 
-    const initializeDeepgram = (remoteStream: MediaStream | null) => {
+    const initializeDeepgram = () => {
         navigator.mediaDevices
             .getUserMedia({ audio: true })
             .then((localStream: MediaStream) => {
-                currentStream = new MediaStream();
-
                 const audioContext = new AudioContext();
                 const destination = audioContext.createMediaStreamDestination();
 
-                console.log("currentStream", currentStream);
-                console.log("remoteStream", remoteStream);
+                console.log("localStream", localStream);
 
-                const localSource =
-                    audioContext.createMediaStreamSource(localStream);
-                localSource.connect(destination);
-
-                if (remoteStream) {
-                    const remoteSource =
-                        audioContext.createMediaStreamSource(remoteStream);
-                    remoteSource.connect(destination);
-                }
+                audioContext
+                    .createMediaStreamSource(localStream)
+                    .connect(destination);
 
                 const mixedStream = destination.stream;
 
@@ -63,7 +60,7 @@ const Transcription = forwardRef<
                 });
 
                 let newSocket = new WebSocket(
-                    "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true&utterances=true&multichannel=true&diarize=true",
+                    "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true&utterances=true&multichannel=true&diarize=true&extra=source:local",
                     ["token", config?.deepgram_api_key]
                 );
 
@@ -71,7 +68,10 @@ const Transcription = forwardRef<
                     newMicrophone?.addEventListener(
                         "dataavailable",
                         (event) => {
-                            if (isActiveCall) {
+                            if (
+                                isActiveCall &&
+                                newSocket.readyState == WebSocket.OPEN
+                            ) {
                                 newSocket?.send(event.data);
                             }
                         }
@@ -88,19 +88,11 @@ const Transcription = forwardRef<
                     const transcript =
                         received?.channel?.alternatives[0].transcript;
 
-                    const words = received?.channel?.alternatives[0].words;
-
-                    const source =
-                        words?.[0]?.speaker == 1 ? "Remote" : "Local"; // Adjust labels as needed.
-
-                    let speaker = "";
-                    if (source == "Local") {
-                        // the speaker is me
-                        speaker = isImCaller ? "Caller" : "Receiver";
-                    } else {
-                        // the speaker is the other person
-                        speaker = isImCaller ? "Receiver" : "Caller";
+                    if (received?.metadata?.extra?.source != "local") {
+                        return;
                     }
+
+                    let speaker = isImCaller ? "Caller" : "Receiver";
 
                     if (
                         transcript &&
@@ -111,9 +103,7 @@ const Transcription = forwardRef<
                         console.log("received", {
                             message: message,
                             received: received,
-                            channel: received?.channel,
                             localStream: localStream,
-                            remoteStream: remoteStream,
                             labeledTranscript: labeledTranscript,
                         });
 
@@ -145,6 +135,75 @@ const Transcription = forwardRef<
             });
     };
 
+    const initializeRemoteStream = (remoteStream: MediaStream) => {
+        const audioContext = new AudioContext();
+        const destination = audioContext.createMediaStreamDestination();
+
+        console.log("remoteStream", remoteStream);
+
+        audioContext.createMediaStreamSource(remoteStream).connect(destination);
+
+        const mixedStream = destination.stream;
+
+        let newMicrophone = new MediaRecorder(mixedStream, {
+            mimeType: "audio/webm",
+        });
+
+        let newSocket = new WebSocket(
+            "wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&model=nova-3&smart_format=true&utterances=true&multichannel=true&diarize=true",
+            ["token", config?.deepgram_api_key]
+        );
+
+        newSocket.onopen = () => {
+            newMicrophone?.addEventListener("dataavailable", (event) => {
+                if (isActiveCall && newSocket.readyState == WebSocket.OPEN) {
+                    newSocket?.send(event.data);
+                }
+            });
+
+            // Start recording audio in 150ms chunks. The audio will be sent to the deepgram server
+            newMicrophone?.start(100);
+            setRemoteMicrophone(newMicrophone);
+        };
+
+        newSocket.onmessage = (message) => {
+            const received = JSON.parse(message.data);
+            const transcript = received?.channel?.alternatives[0].transcript;
+
+            if (received?.metadata?.extra?.source == "local") {
+                return;
+            }
+
+            let speaker = isImCaller ? "Receiver" : "Caller";
+
+            if (transcript && currentTranscript != transcript && isActiveCall) {
+                const labeledTranscript = `${speaker}: ${transcript}`;
+                console.log("received from remote", {
+                    message: message,
+                    received: received,
+                    channel: received?.channel,
+                    remoteStream: remoteStream,
+                    labeledTranscript: labeledTranscript,
+                });
+
+                setCurrentTranscript(labeledTranscript);
+                setScripts((prev) => [...prev, transcript]);
+
+                if (scripts !== undefined && setTranscripts !== undefined) {
+                    setTranscripts(scripts);
+                    if (speaker == "Caller") {
+                        setScriptsFromCaller((prev) => [...prev, transcript]);
+                    } else {
+                        setScriptsFromReceiver((prev) => [...prev, transcript]);
+                    }
+                }
+                console.log(labeledTranscript);
+            }
+        };
+
+        setRemoteSocket(newSocket);
+    };
+
     const stopRecording = () => {
         console.log({
             all: scripts.join(","),
@@ -158,28 +217,30 @@ const Transcription = forwardRef<
         }
 
         // Close the WebSocket connection
-        if (socket && socket.readyState === WebSocket.OPEN) {
+        if (socket) {
             socket.close();
             console.log("Deepgram WebSocket closed.");
         }
 
-        stopStream();
+        if (remoteMicrophone && remoteMicrophone.state === "recording") {
+            remoteMicrophone.stop();
+            console.log("MediaRecorder stopped.");
+        }
+
+        // Close the WebSocket connection
+        if (remoteSocket) {
+            remoteSocket.close();
+            console.log("Deepgram WebSocket closed.");
+        }
+
         setScripts([""]);
         setCurrentTranscript("");
     };
 
-    const stopStream = () => {
-        navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-            currentStream?.getTracks().forEach((track) => {
-                if (track.readyState == "live") {
-                    track.stop();
-                }
-            });
-        });
-    };
 
     useImperativeHandle(ref, () => ({
         initializeDeepgram,
+        initializeRemoteStream,
         stopRecording,
     }));
 

@@ -98,9 +98,15 @@ export function PhoneUI({
 
     useEffect(() => {
         if (remoteStream && transcriptionRef.current && isActiveCall) {
-            transcriptionRef.current.initializeDeepgram(remoteStream);
+            transcriptionRef.current.initializeRemoteStream(remoteStream);
         }
     }, [remoteStream]);
+
+    useEffect(() => {
+        if (transcriptionRef.current && isActiveCall) {
+            transcriptionRef.current.initializeDeepgram();
+        }
+    }, [isActiveCall]);
 
     return (
         <div className="w-full max-w-lg m-auto bg-gray-50 dark:bg-gray-900">
