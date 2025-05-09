@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { Contact } from "@/types";
+import { usePage } from "@inertiajs/react";
 
 interface ContactsListProps {
     contacts: Contact[];
@@ -9,25 +10,33 @@ interface ContactsListProps {
 
 export function ContactsList({ contacts, onSelect }: ContactsListProps) {
     const [searchTerm, setSearchTerm] = useState("");
+    const authUser = usePage().props.auth.user as any;
 
-    const filteredContacts = contacts.filter((contact) => {
-        let userMatch = false;
-        if (contact?.user) {  // there are contacts with no users
-            userMatch = contact.user
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase());
-        }
+    const filteredContacts = contacts
+        .filter((contact) => {
+            return contact.user != authUser.meta.user;
+        })
+        .filter((contact) => {
+            let userMatch = false;
+            if (contact?.user) {
+                // there are contacts with no users
+                userMatch = contact.user
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase());
+            }
 
-        return (
-            contact.first_name
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase()) ||
-            contact.last_name
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase()) ||
-            userMatch
-        );
-    });
+            return (
+                contact.first_name
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                contact.last_name
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                userMatch
+            );
+        });
+
+    console.log("filteredContacts", filteredContacts);
 
     return (
         <div className="flex flex-col h-full">

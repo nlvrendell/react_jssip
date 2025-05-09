@@ -77,6 +77,16 @@ class ConnectwareService
         ]);
     }
 
+    public function updateUserStatus(array $data = [])
+    {
+        return $this->makeHttpRequest('', [
+            'format' => 'json',
+            'object' => 'subscriber',
+            'action' => 'update',
+            ...$data,
+        ]);
+    }
+
     public function logout()
     {
         Auth::guard('web')->logout();

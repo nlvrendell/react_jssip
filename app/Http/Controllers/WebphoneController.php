@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ConnectwareService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -31,5 +32,24 @@ class WebphoneController extends Controller
             'contacts' => $this->connectwareService->listContacts(),
             'callHistory' => $this->connectwareService->listCallHistories(),
         ]);
+    }
+
+    public function updateStatus(Request $request)
+    {
+        $user = request()->user();
+
+        $request->validate([
+            'message' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->connectwareService->updateUserStatus([
+            'domain' => $user->meta['domain'],
+            'user' => $user->meta['user'],
+            'uid' => $user->meta['uid'],
+            'current_password' => '',
+            'message' => $request->message ?? '',
+        ]);
+
+        return back();
     }
 }

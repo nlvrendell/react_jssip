@@ -19,6 +19,7 @@ export interface Contact {
     last_name: string;
     user: string;
     presence: string;
+    message: string;
 }
 
 export interface CallHistoryItem {
