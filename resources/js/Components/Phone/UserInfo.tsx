@@ -6,11 +6,10 @@ import { useEffect, useState } from "react";
 interface UserInfoProps {
     isRegistered: boolean;
     contacts: Contact[];
+    authUser: any;
 }
 
-export function UserInfo({ isRegistered, contacts }: UserInfoProps) {
-    const authUser = usePage().props.auth.user as any;
-
+export function UserInfo({ isRegistered, contacts, authUser }: UserInfoProps) {
     const [currentStatus, setCurrentStatus] = useState<string | undefined>("");
     const [isSettingMessage, setIsSettingMessage] = useState(false);
     const [authUserMessage, setAuthUserMessage] = useState<string | undefined>(
@@ -100,6 +99,7 @@ export function UserInfo({ isRegistered, contacts }: UserInfoProps) {
                                     className="cursor-pointer break-words w-full"
                                     onClick={() => setIsSettingMessage(true)}
                                 >
+                                    ''{" "}
                                     {authUserMessage
                                         ? authUserMessage
                                         : "Set a status message"}

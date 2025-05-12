@@ -475,6 +475,7 @@ export default function WebPhone() {
                         <UserInfo
                             isRegistered={isRegistered}
                             contacts={contacts}
+                            authUser={authUser}
                         />
                     </div>
                 </div>

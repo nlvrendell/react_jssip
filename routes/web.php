@@ -5,9 +5,7 @@ use App\Http\Controllers\WebphoneController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Auth/Login', []);
-});
+Route::redirect('/', '/login');
 
 // Route::get('/dashboard', function () {
 //     return Inertia::render('Dashboard');
