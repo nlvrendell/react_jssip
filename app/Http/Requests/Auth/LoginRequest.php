@@ -45,33 +45,33 @@ class LoginRequest extends FormRequest
 
         $credentials = [
             'grant_type' => 'password',
-            'client_id' => config('connectware.client_id'),
-            'client_secret' => config('connectware.client_secret'),
             'username' => request()->input('username'),
             'password' => request()->input('password'),
         ];
 
-        $response = Http::withoutVerifying()
-            ->post(config('connectware.api').'/ns-api/v2/tokens', $credentials);
+        $response = Http::withBasicAuth(config('connectware.client_id'), config('connectware.client_secret'))
+            ->post(config('connectware.api').'/ns-api/oauth2/netsapiensJs', $credentials);
 
         if ($response->ok()) {
-            $user = User::where('connectware_id', $response['uid'])->first();
+            $jwtToken = $response->json()['token'];
+            $parseToken = $this->parseToken($jwtToken);
+
+            $user = User::where('connectware_id', $parseToken['sub'])->first();
 
             if (! $user) {
                 $user = User::create([
-                    'name' => $response['displayName'],
-                    'email' => $response['user_email'],
-                    'connectware_id' => $response['uid'],
+                    'name' => $parseToken['displayName'],
+                    'email' => $parseToken['user_email'],
+                    'connectware_id' => $parseToken['sub'],
+                    'username' => $parseToken['login'],
                     'password' => bcrypt(request()->input('password')),
-                    'access_token' => $response['access_token'],
-                    'refresh_token' => $response['refresh_token'],
-                    'meta' => $response->json(),
+                    'access_token' => $jwtToken,
+                    'meta' => $parseToken,
                 ]);
             } else {
                 $user->update([
-                    'access_token' => $response['access_token'],
-                    'refresh_token' => $response['refresh_token'],
-                    'meta' => $response->json(),
+                    'access_token' => $jwtToken,
+                    'meta' => $parseToken,
                 ]);
             }
 
@@ -114,5 +114,13 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    public function parseToken(string $nsToken): array
+    {
+        [$header, $payload] = explode('.', $nsToken);
+
+        // Decode the header and payload from base64
+        return json_decode(base64_decode($payload), true);
     }
 }

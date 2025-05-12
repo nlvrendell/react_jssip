@@ -131,7 +131,6 @@ function initializeRingTone() {
     document.addEventListener(
         "mousemove",
         () => {
-            console.log("Mouse moved");
             if (!ringtone) {
                 ringtone = new Audio("/ringtone.mp3");
                 ringtone.loop = true;

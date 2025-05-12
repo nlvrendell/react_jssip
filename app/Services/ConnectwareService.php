@@ -14,7 +14,7 @@ class ConnectwareService
     public function __construct()
     {
         $this->http = Http::withoutVerifying()
-            ->withToken($this->getConnectwareAccessToken())
+            ->withToken(request()->user()->access_token)
             ->baseUrl(config('connectware.api').'/ns-api/');
     }
 
@@ -34,13 +34,6 @@ class ConnectwareService
         }
 
         return $response->json();
-    }
-
-    public function getConnectwareAccessToken(): string
-    {
-        $tokenInfo = (new \App\Services\HandleGetAccessTokenService)->handle();
-
-        return $tokenInfo['access_token'];
     }
 
     public function listDevices()

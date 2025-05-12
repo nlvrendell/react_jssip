@@ -46,9 +46,6 @@ const Transcription = forwardRef<
             .then((localStream: MediaStream) => {
                 const audioContext = new AudioContext();
                 const destination = audioContext.createMediaStreamDestination();
-
-                console.log("localStream", localStream);
-
                 audioContext
                     .createMediaStreamSource(localStream)
                     .connect(destination);
@@ -100,12 +97,6 @@ const Transcription = forwardRef<
                         isActiveCall
                     ) {
                         const labeledTranscript = `${speaker}: ${transcript}`;
-                        console.log("received", {
-                            message: message,
-                            received: received,
-                            localStream: localStream,
-                            labeledTranscript: labeledTranscript,
-                        });
 
                         setCurrentTranscript(labeledTranscript);
                         setScripts((prev) => [...prev, transcript]);
@@ -138,8 +129,6 @@ const Transcription = forwardRef<
     const initializeRemoteStream = (remoteStream: MediaStream) => {
         const audioContext = new AudioContext();
         const destination = audioContext.createMediaStreamDestination();
-
-        console.log("remoteStream", remoteStream);
 
         audioContext.createMediaStreamSource(remoteStream).connect(destination);
 
@@ -178,13 +167,6 @@ const Transcription = forwardRef<
 
             if (transcript && currentTranscript != transcript && isActiveCall) {
                 const labeledTranscript = `${speaker}: ${transcript}`;
-                console.log("received from remote", {
-                    message: message,
-                    received: received,
-                    channel: received?.channel,
-                    remoteStream: remoteStream,
-                    labeledTranscript: labeledTranscript,
-                });
 
                 setCurrentTranscript(labeledTranscript);
                 setScripts((prev) => [...prev, transcript]);

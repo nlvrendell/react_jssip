@@ -36,8 +36,6 @@ export function ContactsList({ contacts, onSelect }: ContactsListProps) {
             );
         });
 
-    console.log("filteredContacts", filteredContacts);
-
     return (
         <div className="flex flex-col h-full">
             <div className="p-4">
