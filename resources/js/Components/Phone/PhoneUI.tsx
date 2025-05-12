@@ -108,6 +108,22 @@ export function PhoneUI({
         }
     }, [isActiveCall]);
 
+    useEffect(() => {
+        getMicrophonePermission();
+    }, []);
+
+    async function getMicrophonePermission() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+            });
+
+            stream.getTracks().forEach((track) => track.stop()); // Stop the stream
+        } catch (error) {
+            console.error("Error accessing microphone:", error);
+        }
+    }
+
     return (
         <div className="w-full max-w-lg m-auto bg-gray-50 dark:bg-gray-900">
             <div className="phone-container bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">

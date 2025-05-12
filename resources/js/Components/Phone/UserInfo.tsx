@@ -25,6 +25,21 @@ export function UserInfo({ isRegistered, contacts, authUser }: UserInfoProps) {
         setCurrentStatus(authUserContactData?.message);
     }, [contacts]);
 
+    const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setIsSettingMessage(false);
+        if (currentStatus == authUserMessage) {
+            return;
+        }
+        router.post(
+            route("status.store"),
+            { message: authUserMessage },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
+    };
+
     return (
         <div className="border-t border-gray-200 dark:border-gray-800 p-4">
             <button
@@ -74,24 +89,7 @@ export function UserInfo({ isRegistered, contacts, authUser }: UserInfoProps) {
                                     onChange={(e) =>
                                         setAuthUserMessage(e.target.value)
                                     }
-                                    onBlur={() => {
-                                        setIsSettingMessage(false);
-
-                                        if (
-                                            currentStatus == "" &&
-                                            authUserMessage == ""
-                                        ) {
-                                            return;
-                                        }
-                                        router.post(
-                                            route("status.store"),
-                                            { message: authUserMessage },
-                                            {
-                                                preserveState: true,
-                                                preserveScroll: true,
-                                            }
-                                        );
-                                    }}
+                                    onBlur={handleStatusChange}
                                     autoFocus
                                 />
                             ) : (
