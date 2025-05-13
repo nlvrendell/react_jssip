@@ -21,13 +21,13 @@
  php artisan key:generate
 ```
 
-- Add the initial value for your JsSIP Account Credentials. You can get you credential at the connectware domain users phone.
+- Add the initial value for your JsSIP Account Credentials & Deepgram API KEY. You can get you credential at the connectware domain users phone.
 ```
-CW_DOMAIN=
-CW_URI=
-CW_PASSWORD=
-CW_SERVER=
-CW_USER_AGENT=
+DEEPGRAM_API_KEY=
+CONNECTWARE_SERVER=
+CONNECTWARE_CLIENT_ID=
+CONNECTWARE_CLIENT_SECRET_KEY=
+CONNECTWARE_API=
 ```
 
 - Start the app by running the laravel and node
