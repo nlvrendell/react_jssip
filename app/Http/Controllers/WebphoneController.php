@@ -15,7 +15,7 @@ class WebphoneController extends Controller
     {
         $user = Auth::user();
 
-        $uri = 'sip:'.$user->meta['user'].'wp@'.$user->meta['domain'];
+        $uri = 'sip:'.$user->meta['user'].'@'.$user->meta['domain'];
         $devices = $this->connectwareService->listDevices();
 
         $wpDevice = collect($devices)->firstWhere('aor', $uri) ?? $devices[0];
