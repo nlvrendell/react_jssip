@@ -268,17 +268,12 @@ export default function WebPhone() {
             return;
         }
 
-        const destinationSIP = `sip:${transferDestination.trim()}@${
-            config.domain
-        }`;
-
         if (!currentSession) {
             console.log("No current session");
             return;
         }
 
         setState("Transferring..");
-        console.log("destinationSIP", destinationSIP);
 
         var receiver = new JsSIP.URI(
             "sip",
@@ -322,18 +317,6 @@ export default function WebPhone() {
                         .toLowerCase()
                         .includes(destination.toLowerCase())
             );
-
-            // const newCall: CallHistoryItem = {
-            //     id: Date.now().toString(),
-            //     name:
-            //         (contact?.first_name || "") +
-            //         " " +
-            //         (contact?.last_name || "Unknown"),
-            //     number: contact?.user || destination,
-            //     timestamp: new Date(),
-            //     type: "outgoing",
-            //     duration: 0,
-            // };
 
             const newCall: CallHistoryItem = {
                 cdr_id: Date.now().toString(),
