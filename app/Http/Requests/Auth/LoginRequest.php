@@ -61,7 +61,7 @@ class LoginRequest extends FormRequest
             if (! $user) {
                 $user = User::create([
                     'name' => $parseToken['displayName'],
-                    'email' => $parseToken['user_email'],
+                    'email' => empty($parseToken['user_email']) ? null : $parseToken['user_email'],
                     'connectware_id' => $parseToken['sub'],
                     'username' => $parseToken['login'],
                     'password' => bcrypt(request()->input('password')),
