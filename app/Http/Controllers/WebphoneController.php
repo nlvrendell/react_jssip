@@ -46,7 +46,7 @@ class WebphoneController extends Controller
         $this->connectwareService->updateUserStatus([
             'domain' => $user->meta['domain'],
             'user' => $user->meta['user'],
-            'uid' => $user->meta['uid'],
+            'uid' => $user->connectware_id,
             'current_password' => '',
             'message' => $request->message ?? '',
         ]);

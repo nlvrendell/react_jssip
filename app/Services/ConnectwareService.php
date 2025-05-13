@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
@@ -98,8 +97,6 @@ class ConnectwareService
         request()->session()->invalidate();
 
         request()->session()->regenerateToken();
-
-        Cache::forget('connectware_access_token');
 
         return Inertia::render('Auth/Login', [
             'status' => 'Session Expired. Please login again',
