@@ -1,4 +1,5 @@
 import JsSIP from "jssip";
+import { RTCSession } from "jssip/lib/RTCSession";
 
 let ringtone: HTMLAudioElement | null = null;
 
@@ -9,7 +10,7 @@ export function createSipUA(
         wsServers: string;
         user_agent: string;
     },
-    setCurrentSession: (session: JsSIP.RTCSession | null) => void,
+    setCurrentSession: (session: RTCSession | null) => void,
     setIsRegistered: (status: boolean) => void,
     setIsCallIncoming: (status: boolean) => void,
     setState: (state: string) => void,
