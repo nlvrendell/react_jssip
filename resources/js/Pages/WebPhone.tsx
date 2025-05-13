@@ -21,6 +21,7 @@ import JsSIP from "jssip";
 import { call } from "@/uitls/phone";
 import { CallHistoryTypeEnum } from "@/types/enum";
 import { Parks } from "@/Components/Phone/Parks";
+import { RTCSession } from "jssip/lib/RTCSession";
 
 export default function WebPhone() {
     const [destination, setDestination] = useState("");
@@ -30,8 +31,9 @@ export default function WebPhone() {
     const [isMuted, setIsMuted] = useState(false);
     const [isOnHold, setIsOnHold] = useState(false);
     const [activeSection, setActiveSection] = useState("phone");
-    const [currentSession, setCurrentSession] =
-        useState<JsSIP.RTCSession | null>(null);
+    const [currentSession, setCurrentSession] = useState<RTCSession | null>(
+        null
+    );
     const [state, setState] = useState("");
     const [ua, setUa] = useState<JsSIP.UA | null>(null);
     const [isTransferring, setIsTransferring] = useState(false);

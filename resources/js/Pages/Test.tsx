@@ -4,18 +4,20 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
 import TextInput from "@/Components/TextInput";
-import { FormEventHandler, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import JsSIP from "jssip";
 import DangerButton from "@/Components/DangerButton";
-import { createSipUA } from "@/utils";
+import { RTCSession } from "jssip/lib/RTCSession";
+
 export default function Welcome({
     auth,
     laravelVersion,
     phpVersion,
 }: PageProps<{ laravelVersion: string; phpVersion: string }>) {
     const [ua, setUa] = useState<JsSIP.UA | null>(null);
-    const [currentSession, setCurrentSession] =
-        useState<JsSIP.RTCSession | null>(null);
+    const [currentSession, setCurrentSession] = useState<RTCSession | null>(
+        null
+    );
     const [callStatus, setCallStatus] = useState<string>("Idle");
 
     useEffect(() => {

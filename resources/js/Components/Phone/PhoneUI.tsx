@@ -15,7 +15,7 @@ import {
 import Transcription, {
     TranscriptionComponentRef,
 } from "@/Components/Phone/Transcription";
-import JsSIP from "jssip";
+import { RTCSession } from "jssip/lib/RTCSession";
 
 interface PhoneUIProps {
     destination: string;
@@ -25,7 +25,7 @@ interface PhoneUIProps {
     isMuted: boolean;
     isOnHold: boolean;
     isCallIncoming: boolean;
-    session: JsSIP.RTCSession | null;
+    session: RTCSession | null;
     setDestination: (value: string) => void;
     toggleMute: () => void;
     setCallDuration: (value: any) => void;

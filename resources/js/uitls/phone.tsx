@@ -1,9 +1,10 @@
 import JsSIP from "jssip";
+import { RTCSession } from "jssip/lib/RTCSession";
 
 export function call(
     ua: JsSIP.UA,
     destinationSIP: string,
-    setCurrentSession: (session: JsSIP.RTCSession | null) => void,
+    setCurrentSession: (session: RTCSession | null) => void,
     setIsActiveCall: (isActiveCall: boolean) => void,
     setState: (state: string) => void,
     setRemoteStream: (stream: MediaStream | null) => void
