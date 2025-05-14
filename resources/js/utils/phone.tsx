@@ -6,7 +6,6 @@ export function call(
     destinationSIP: string,
     setCurrentSession: (session: RTCSession | null) => void,
     setIsActiveCall: (isActiveCall: boolean) => void,
-    setState: (state: string) => void,
     setRemoteStream: (stream: MediaStream | null) => void
 ) {
     const session = ua.call(destinationSIP, {
@@ -14,7 +13,6 @@ export function call(
     });
 
     session.on("sending", function (e: any) {
-        setState("Calling..");
         console.log("sending", e);
     });
 
@@ -24,7 +22,6 @@ export function call(
 
     session.on("confirmed", () => {
         console.log("call confirmed");
-        setState("");
         if (session.connection) {
             session.connection.addEventListener("track", (e: any) => {
                 console.log("track", e);
@@ -49,12 +46,10 @@ export function call(
 
     session.on("failed", function (e: any) {
         console.log("call failed", e);
-        setState("");
     });
 
     session.on("ended", () => {
         setIsActiveCall(false);
-        setState("");
         console.log("Call ended!");
     });
 

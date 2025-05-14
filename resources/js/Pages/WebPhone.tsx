@@ -18,7 +18,7 @@ import { PhoneUI } from "@/Components/Phone/PhoneUI";
 import { Head, usePage } from "@inertiajs/react";
 import { createSipUA } from "@/utils";
 import JsSIP from "jssip";
-import { call } from "@/uitls/phone";
+import { call } from "@/utils/phone";
 import { CallHistoryTypeEnum } from "@/types/enum";
 import { Parks } from "@/Components/Phone/Parks";
 import { RTCSession } from "jssip/lib/RTCSession";
@@ -34,7 +34,6 @@ export default function WebPhone() {
     const [currentSession, setCurrentSession] = useState<RTCSession | null>(
         null
     );
-    const [state, setState] = useState("");
     const [ua, setUa] = useState<JsSIP.UA | null>(null);
     const [isTransferring, setIsTransferring] = useState(false);
     const [transferDestination, setTransferDestination] = useState("");
@@ -44,6 +43,7 @@ export default function WebPhone() {
     const [callHistory, setCallHistory] = useState(
         usePage().props.callHistory as CallHistoryItem[]
     );
+    const [caller, setCaller] = useState<string>("");
 
     const config = usePage().props.config as {
         domain: string;
@@ -70,10 +70,10 @@ export default function WebPhone() {
             setCurrentSession,
             setIsRegistered,
             setIsCallIncoming,
-            setState,
             handleEndCall,
             setDestination,
-            setRemoteStream
+            setRemoteStream,
+            setCaller
         );
         setUa(userAgent);
 
@@ -122,7 +122,6 @@ export default function WebPhone() {
                 destinationSIP,
                 setCurrentSession,
                 setIsActiveCall,
-                setState,
                 setRemoteStream
             );
 
@@ -274,8 +273,6 @@ export default function WebPhone() {
             console.log("No current session");
             return;
         }
-
-        setState("Transferring..");
 
         var receiver = new JsSIP.URI(
             "sip",
@@ -486,11 +483,10 @@ export default function WebPhone() {
                         setTransferDestination={setTransferDestination}
                         setIsTransferring={setIsTransferring}
                         transferCall={transferCall}
-                        setIsCallIncoming={setIsCallIncoming}
                         answerCall={answerCall}
-                        session={currentSession}
                         remoteStream={remoteStream}
                         isImCaller={isImCaller}
+                        caller={caller}
                     />
                 </div>
             </div>

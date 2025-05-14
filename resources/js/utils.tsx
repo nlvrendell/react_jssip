@@ -13,10 +13,10 @@ export function createSipUA(
     setCurrentSession: (session: RTCSession | null) => void,
     setIsRegistered: (status: boolean) => void,
     setIsCallIncoming: (status: boolean) => void,
-    setState: (state: string) => void,
     handleEndCall: () => void,
     setDestination: (destination: string) => void,
-    setRemoteStream: (stream: MediaStream | null) => void
+    setRemoteStream: (stream: MediaStream | null) => void,
+    setCaller: (caller: string) => void
 ) {
     const socket = new JsSIP.WebSocketInterface(config.wsServers);
     // JsSIP.debug.enable("JsSIP:*");
@@ -46,12 +46,12 @@ export function createSipUA(
 
     userAgent.on("newRTCSession", (e: any) => {
         const session = e.session;
+        console.log("newRTCSession", session.remote_identity);
+        setCaller(session?.remote_identity?._display_name);
         setDestination(session.remote_identity._uri._user);
 
         if (e.originator === "remote") {
             setIsCallIncoming(true);
-            setState("Incoming Call..");
-
             let remoteStream = new MediaStream();
 
             session.on("peerconnection", (e: any) => {
@@ -91,13 +91,11 @@ export function createSipUA(
 
             session.on("accepted", () => {
                 console.log("Call accepted!");
-                setState("");
                 stopRingtone(ringtone);
             });
 
             session.on("failed", function (e: any) {
                 console.log("call failed", e);
-                setState("");
                 setIsCallIncoming(false);
                 setDestination("");
                 stopRingtone(ringtone);
@@ -106,7 +104,6 @@ export function createSipUA(
             session.on("ended", () => {
                 console.log("Call ended!");
                 handleEndCall();
-                setState("");
                 setDestination("");
                 stopRingtone(ringtone);
             });

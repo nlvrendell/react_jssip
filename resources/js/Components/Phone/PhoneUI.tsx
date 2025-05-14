@@ -15,7 +15,6 @@ import {
 import Transcription, {
     TranscriptionComponentRef,
 } from "@/Components/Phone/Transcription";
-import { RTCSession } from "jssip/lib/RTCSession";
 
 interface PhoneUIProps {
     destination: string;
@@ -25,7 +24,6 @@ interface PhoneUIProps {
     isMuted: boolean;
     isOnHold: boolean;
     isCallIncoming: boolean;
-    session: RTCSession | null;
     setDestination: (value: string) => void;
     toggleMute: () => void;
     setCallDuration: (value: any) => void;
@@ -37,10 +35,10 @@ interface PhoneUIProps {
     setTransferDestination: (value: string) => void;
     setIsTransferring: (value: boolean) => void;
     transferCall: () => void;
-    setIsCallIncoming: (value: boolean) => void;
     answerCall: () => void;
     remoteStream: MediaStream | null;
     isImCaller: boolean;
+    caller: string;
 }
 
 export function PhoneUI({
@@ -53,9 +51,9 @@ export function PhoneUI({
     transferDestination,
     isTransferring,
     isCallIncoming,
-    session,
     remoteStream,
     isImCaller,
+    caller,
     setDestination,
     setCallDuration,
     toggleMute,
@@ -65,7 +63,6 @@ export function PhoneUI({
     setTransferDestination,
     setIsTransferring,
     transferCall,
-    setIsCallIncoming,
     answerCall,
 }: PhoneUIProps) {
     const [transcripts, setTranscripts] = useState<string[]>([""]);
@@ -139,6 +136,12 @@ export function PhoneUI({
                         </div>
                     )}
                 </div>
+
+                {isCallIncoming && (
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                        {caller ? caller : "Someone"} is calling..
+                    </div>
+                )}
 
                 {/* Destination Input */}
                 <div className="mb-6">
