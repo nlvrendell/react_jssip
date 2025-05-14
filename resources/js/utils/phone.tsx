@@ -6,10 +6,12 @@ export function call(
     destinationSIP: string,
     setCurrentSession: (session: RTCSession | null) => void,
     setIsActiveCall: (isActiveCall: boolean) => void,
-    setRemoteStream: (stream: MediaStream | null) => void
+    setRemoteStream: (stream: MediaStream | null) => void,
+    fromDisplayName: string
 ) {
     const session = ua.call(destinationSIP, {
         mediaConstraints: { audio: true, video: false },
+        fromDisplayName: fromDisplayName,
     });
 
     session.on("sending", function (e: any) {

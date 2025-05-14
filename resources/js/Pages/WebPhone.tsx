@@ -122,7 +122,8 @@ export default function WebPhone() {
                 destinationSIP,
                 setCurrentSession,
                 setIsActiveCall,
-                setRemoteStream
+                setRemoteStream,
+                authUser.name
             );
 
             setIsImCaller(true);
