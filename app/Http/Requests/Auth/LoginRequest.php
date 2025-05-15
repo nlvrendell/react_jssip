@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use App\Services\ConnectwareAuthService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -54,7 +55,7 @@ class LoginRequest extends FormRequest
 
         if ($response->ok()) {
             $jwtToken = $response->json()['token'];
-            $parseToken = $this->parseToken($jwtToken);
+            $parseToken = (new ConnectwareAuthService)->parseToken($jwtToken);
 
             $user = User::where('connectware_id', $parseToken['sub'])->first();
 
@@ -114,13 +115,5 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
-    }
-
-    public function parseToken(string $nsToken): array
-    {
-        [$header, $payload] = explode('.', $nsToken);
-
-        // Decode the header and payload from base64
-        return json_decode(base64_decode($payload), true);
     }
 }

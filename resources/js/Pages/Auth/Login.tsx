@@ -5,7 +5,8 @@ import PrimaryButton from "@/Components/PrimaryButton";
 import TextInput from "@/Components/TextInput";
 import GuestLayout from "@/Layouts/GuestLayout";
 import { NextLayout } from "@/Layouts/NextLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
+import axios from "axios";
 import { FormEventHandler } from "react";
 
 export default function Login({
@@ -27,6 +28,18 @@ export default function Login({
         post(route("login"), {
             onFinish: () => reset("password"),
         });
+    };
+
+    const handleConnectwareSignIn = () => {
+        axios
+            .post(route("connectware.login"))
+            .then((res: any) => {
+                console.log(res.data?.url);
+                window.location.href = res.data?.url;
+            })
+            .catch((err: any) => {
+                console.log(err.response.data);
+            });
     };
 
     return (
@@ -93,6 +106,15 @@ export default function Login({
                                 className="dark:bg-gray-700 dark:hover:bg-gray-900"
                             >
                                 Log in
+                            </PrimaryButton>
+                            <br></br>
+                            <PrimaryButton
+                                type="button"
+                                disabled={processing}
+                                className="dark:bg-gray-700 dark:hover:bg-gray-900 mt-2"
+                                onClick={handleConnectwareSignIn}
+                            >
+                                Sign in with Connectware
                             </PrimaryButton>
                         </form>
                     </div>

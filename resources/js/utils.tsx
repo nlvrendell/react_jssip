@@ -46,14 +46,11 @@ export function createSipUA(
 
     userAgent.on("newRTCSession", (e: any) => {
         const session = e.session;
-        console.log("newRTCSession", session.remote_identity);
         setCaller(session?.remote_identity?._display_name);
         setDestination(session.remote_identity._uri._user);
 
         if (e.originator === "remote") {
             setIsCallIncoming(true);
-            let remoteStream = new MediaStream();
-
             session.on("peerconnection", (e: any) => {
                 console.log("RTCPeerConnection created");
 
