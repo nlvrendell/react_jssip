@@ -42,7 +42,7 @@ class ConnectwareAuthentication extends Controller
 
         $parseToken = (new ConnectwareAuthService)->parseToken($nsToken);
 
-        if (count($parseToken) === 0) {
+        if (count($parseToken) === 0 || ! data_get($parseToken, 'sub')) {
             return response()->json([
                 'message' => 'Invalid token',
             ]);
