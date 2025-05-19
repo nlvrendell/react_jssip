@@ -13,14 +13,21 @@ class ConnectwareAuthentication extends Controller
     public function login(Request $request)
     {
         $response = Http::post(config('connectware.connectware_auth_url'), [
-            'callback_url' => config('connectware.connectware_auth_callback'),
+            'callback_url' => route(('authenticate.token')),
             'secret' => config('connectware.connectware_auth_secret'),
+            'return_url' => route('login'),
         ]);
 
-        if ($response->status() !== 200) {
-            return back()->withErrors([
-                'message' => $response->json()['errors'],
-            ]);
+        if ($response->failed()) {
+            return response()->json([
+                'error' => $response->json()['errors'],
+            ], 422);
+        }
+
+        if (! $response->json()) {
+            return response()->json([
+                'error' => 'Something went wrong. Please check your payloads.',
+            ], 422);
         }
 
         return response()->json([

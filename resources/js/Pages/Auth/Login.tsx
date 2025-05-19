@@ -34,8 +34,9 @@ export default function Login({
         axios
             .post(route("connectware.login"))
             .then((res: any) => {
-                console.log(res.data?.url);
-                window.location.href = res.data?.url;
+                if (res.data?.url) {
+                    window.location.href = res.data?.url;
+                }
             })
             .catch((err: any) => {
                 console.log(err.response.data);
