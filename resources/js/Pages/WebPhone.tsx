@@ -44,7 +44,6 @@ export default function WebPhone() {
         usePage().props.callHistory as CallHistoryItem[]
     );
     const [caller, setCaller] = useState<string>("");
-
     const config = usePage().props.config as {
         domain: string;
         uri: string;
@@ -82,6 +81,20 @@ export default function WebPhone() {
             userAgent.stop();
         };
     }, []);
+
+    useEffect(() => {
+        if (isCallIncoming) {
+            showDesktopNotification(
+                caller + " is calling...",
+                "This is to notify you that " + caller + " is calling"
+            );
+
+            const autoAnswerRef = localStorage.getItem("auto-answer");
+            if (autoAnswerRef == "true") {
+                answerCall();
+            }
+        }
+    }, [isCallIncoming]);
 
     const handleContactSelect = (contact: Contact) => {
         if (isTransferring) {
@@ -337,6 +350,21 @@ export default function WebPhone() {
             };
 
             setCallHistory((prev) => [newCall, ...prev]);
+        }
+    };
+
+    const showDesktopNotification = (title: string, body: string) => {
+        const notifRef = localStorage.getItem("notifications-enabled");
+        if (notifRef == "false") {
+            return;
+        }
+
+        if (Notification.permission === "granted") {
+            new Notification(title, {
+                body: body,
+            });
+        } else {
+            alert("Please allow notifications to receive updates.");
         }
     };
 

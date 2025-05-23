@@ -3,67 +3,64 @@ import { Volume2, Bell, Phone, Monitor, Shield, MicVocal } from "lucide-react";
 import MicrophoneSelect from "@/Components/Phone/Settings/MicrophoneSelect";
 
 export function Settings() {
-    const [audioVolume, setAudioVolume] = useState(80);
-    const [ringtoneVolume, setRingtoneVolume] = useState(70);
-    const [notifications, setNotifications] = useState(true);
-    const [autoAnswer, setAutoAnswer] = useState(false);
-    const [darkTheme, setDarkTheme] = useState(true);
+    const [notifications, setNotifications] = useState(
+        localStorage.getItem("notifications-enabled") == "true"
+    );
+    const [autoAnswer, setAutoAnswer] = useState(
+        localStorage.getItem("auto-answer") == "true"
+    );
+
+    useEffect(() => {
+        // desktop notification
+        const notifRef = localStorage.getItem("notifications-enabled");
+        notifRef == "true" ? setNotifications(true) : setNotifications(false);
+
+        // auto answer
+        const autoAnswerRef = localStorage.getItem("auto-answer");
+        autoAnswerRef == "true" ? setAutoAnswer(true) : setAutoAnswer(false);
+    }, []);
+
+    useEffect(() => {
+        notifications == true
+            ? localStorage.setItem("notifications-enabled", "true")
+            : localStorage.setItem("notifications-enabled", "false");
+
+        if (notifications) {
+            getNotificationPermission();
+        }
+    }, [notifications]);
+
+    useEffect(() => {
+        notifications == true
+            ? localStorage.setItem("notifications-enabled", "true")
+            : localStorage.setItem("notifications-enabled", "false");
+
+        if (notifications) {
+            getNotificationPermission();
+        }
+    }, [notifications]);
+
+    useEffect(() => {
+        autoAnswer == true
+            ? localStorage.setItem("auto-answer", "true")
+            : localStorage.setItem("auto-answer", "false");
+    }, [autoAnswer]);
+
+    async function getNotificationPermission() {
+        const permission = await Notification.requestPermission();
+        console.log("permission", permission);
+        if (permission === "granted") {
+            setNotifications(true);
+            console.log("Notification permission granted.");
+        } else if (permission === "denied") {
+            setNotifications(false);
+            console.log("Notification permission denied.");
+        }
+    }
 
     return (
         <div className="p-4 overflow-y-auto">
             <div className="space-y-6">
-                {/* Audio Settings */}
-                <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                        <Volume2 size={16} />
-                        Audio Settings
-                    </h3>
-                    <div className="space-y-3">
-                        <div>
-                            <label
-                                htmlFor="audio-volume"
-                                className="block text-xs text-gray-500 dark:text-gray-400 mb-1"
-                            >
-                                Call Volume: {audioVolume}%
-                            </label>
-                            <input
-                                id="audio-volume"
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={audioVolume}
-                                onChange={(e) =>
-                                    setAudioVolume(
-                                        Number.parseInt(e.target.value)
-                                    )
-                                }
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                            />
-                        </div>
-                        <div>
-                            <label
-                                htmlFor="ringtone-volume"
-                                className="block text-xs text-gray-500 dark:text-gray-400 mb-1"
-                            >
-                                Ringtone Volume: {ringtoneVolume}%
-                            </label>
-                            <input
-                                id="ringtone-volume"
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={ringtoneVolume}
-                                onChange={(e) =>
-                                    setRingtoneVolume(
-                                        Number.parseInt(e.target.value)
-                                    )
-                                }
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                            />
-                        </div>
-                    </div>
-                </div>
-
                 {/* Microphone Settings */}
                 <div className="space-y-4">
                     <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
@@ -119,39 +116,6 @@ export function Settings() {
                             <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
                         </label>
                     </div>
-                </div>
-
-                {/* Display Settings */}
-                <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                        <Monitor size={16} />
-                        Display Settings
-                    </h3>
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                            Dark theme
-                        </span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={darkTheme}
-                                onChange={() => setDarkTheme(!darkTheme)}
-                                className="sr-only peer"
-                            />
-                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
-                        </label>
-                    </div>
-                </div>
-
-                {/* Security Settings */}
-                <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                        <Shield size={16} />
-                        Security
-                    </h3>
-                    <button className="text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white py-2 px-3 rounded-md transition-colors">
-                        Change Password
-                    </button>
                 </div>
             </div>
         </div>

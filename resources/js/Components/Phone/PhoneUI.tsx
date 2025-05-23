@@ -107,6 +107,7 @@ export function PhoneUI({
 
     useEffect(() => {
         getMicrophonePermission();
+        getNotificationPermission();
     }, []);
 
     async function getMicrophonePermission() {
@@ -118,6 +119,17 @@ export function PhoneUI({
             stream.getTracks().forEach((track) => track.stop()); // Stop the stream
         } catch (error) {
             console.error("Error accessing microphone:", error);
+        }
+    }
+
+    async function getNotificationPermission() {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+            localStorage.setItem("notifications-enabled", "true");
+            console.log("Notification permission granted.");
+        } else if (permission === "denied") {
+            localStorage.setItem("notifications-enabled", "false");
+            console.log("Notification permission denied.");
         }
     }
 
