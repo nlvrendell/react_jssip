@@ -361,6 +361,7 @@ export function PhoneUI({
                     currentSession={currentSession}
                     isActiveCall={isActiveCall}
                     isImCaller={isImCaller}
+                    isMuted={isMuted}
                 />
             </div>
         </div>

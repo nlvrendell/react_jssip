@@ -1,5 +1,11 @@
 import { useForm, usePage } from "@inertiajs/react";
-import { forwardRef, useImperativeHandle, useState } from "react";
+import {
+    forwardRef,
+    useEffect,
+    useImperativeHandle,
+    useRef,
+    useState,
+} from "react";
 import { RTCSession } from "jssip/lib/RTCSession";
 import { filterRedundantTranscripts } from "@/utils";
 
@@ -7,6 +13,7 @@ export type TranscriptionComponentProps = {
     isActiveCall?: boolean;
     isImCaller?: boolean;
     currentSession: RTCSession | null;
+    isMuted: boolean;
 };
 
 // Define what functions will be exposed to the parent via ref
@@ -19,7 +26,7 @@ export type TranscriptionComponentRef = {
 const Transcription = forwardRef<
     TranscriptionComponentRef,
     TranscriptionComponentProps
->(({ isActiveCall, isImCaller, currentSession }, ref) => {
+>(({ isActiveCall, isImCaller, currentSession, isMuted }, ref) => {
     const [socket, setSocket] = useState<WebSocket>();
     const [scripts, setScripts] = useState<string[]>([""]);
     const [microphone, setMicrophone] = useState<MediaRecorder>(
@@ -34,6 +41,8 @@ const Transcription = forwardRef<
     var currentLocalScript = "";
     var currentRemoteScript = "";
 
+    var currentLocalMicrophoneStream = useRef<MediaStream>();
+
     const [remoteSocket, setRemoteSocket] = useState<WebSocket>();
     const [remoteMicrophone, setRemoteMicrophone] = useState<MediaRecorder>(
         new MediaRecorder(new MediaStream())
@@ -43,10 +52,22 @@ const Transcription = forwardRef<
         deepgram_api_key: string;
     };
 
+    useEffect(() => {
+        if (currentLocalMicrophoneStream.current) {
+            const audioTrack =
+                currentLocalMicrophoneStream.current.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !isMuted;
+            }
+        }
+    }, [isMuted]);
+
     const initializeDeepgram = () => {
         navigator.mediaDevices
             .getUserMedia({ audio: true })
             .then((localStream: MediaStream) => {
+                currentLocalMicrophoneStream.current = localStream;
+
                 const audioContext = new AudioContext();
                 const destination = audioContext.createMediaStreamDestination();
                 audioContext

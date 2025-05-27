@@ -77,7 +77,6 @@ export function CallHistory({
     const onHistorySelect = (item: CallHistoryItem) => {
         setScripts(null);
         setLoading(true);
-        console.log("history", item.CdrR?.term_callid, item);
         if (item.CdrR?.term_callid) {
             axios
                 .get(route("transcription", { termId: item.CdrR?.term_callid }))
