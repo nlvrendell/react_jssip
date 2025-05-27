@@ -8,8 +8,11 @@ import {
     PhoneOutgoing,
     PhoneMissed,
     ArrowLeft,
+    XIcon,
 } from "lucide-react";
 import { useState } from "react";
+import Modal from "@/Components/Modal";
+import SecondaryButton from "@/Components/SecondaryButton";
 
 interface CallHistoryProps {
     history: CallHistoryItem[];
@@ -24,6 +27,7 @@ export function CallHistory({
 }: CallHistoryProps) {
     const [scripts, setScripts] = useState<string[] | null>(null);
     const [loading, setLoading] = useState(false);
+    const [openModal, setOpenModal] = useState(false);
 
     const formatCallTime = (date: string) => {
         const dateObj = unixTimestampToDate(parseInt(date, 10));
@@ -75,6 +79,7 @@ export function CallHistory({
     const [showTranscript, setShowTranscript] = useState(false);
 
     const onHistorySelect = (item: CallHistoryItem) => {
+        setOpenModal(true);
         setScripts(null);
         setLoading(true);
         if (item.CdrR?.term_callid) {
@@ -93,9 +98,12 @@ export function CallHistory({
                     console.error("Error fetching transcripts:", error);
                 });
         }
-
         setShowTranscript(true);
         // onSelect(item);
+    };
+
+    const closeModal = () => {
+        setOpenModal(false);
     };
 
     const getCallIcon = (type: string) => {
@@ -120,23 +128,68 @@ export function CallHistory({
 
     return (
         <div className="divide-y divide-gray-200 dark:divide-gray-800">
-            {showTranscript ? (
-                <div className="p-4">
-                    <div className="flex flex-col">
+            <div>
+                {history.length > 0 ? (
+                    history.map((item, index) => (
                         <button
-                            className="mb-4 self-start text-blue-500 hover:underline"
-                            onClick={() => setShowTranscript(false)}
+                            key={index}
+                            className="w-full flex items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left"
+                            onClick={() => onHistorySelect(item)}
                         >
-                            <ArrowLeft
-                                size={20}
-                                className="inline-block mr-2"
-                            />
-                            Back
+                            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mr-3">
+                                {getCallIcon(item.type)}
+                            </div>
+                            <div className="flex-1">
+                                <div className="font-medium text-gray-900 dark:text-white text-sm">
+                                    {getCallName(item)}
+                                    {item.type ==
+                                        CallHistoryTypeEnum.MISSED && (
+                                        <span className="text-red-500 dark:text-red-400">
+                                            {" "}
+                                            (Missed)
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    {item.type == CallHistoryTypeEnum.OUTBOUND
+                                        ? item?.CdrR?.orig_req_user
+                                        : item?.CdrR?.orig_sub}
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    {formatCallTime(item.time_release)}
+                                </div>
+                                {item.duration > 0 && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                        {formatDuration(item.duration)}
+                                    </div>
+                                )}
+                            </div>
                         </button>
-                        <h1 className="text-xl font-semibold mb-2">
-                            Transcript
-                        </h1>
-                        <div className="px-2">
+                    ))
+                ) : (
+                    <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                        No call history
+                    </div>
+                )}
+            </div>
+            <Modal show={openModal} onClose={closeModal}>
+                <div className="p-6">
+                    <div className="flex items-center justify-between px-6">
+                        <div className="text-lg font-medium text-gray-900 dark:text-white">
+                            Call Transcription
+                        </div>
+                        <button
+                            type="button"
+                            className="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                            onClick={closeModal}
+                        >
+                            <XIcon className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                    </div>
+                    <div>
+                        <div className=" px-6 pt-6">
                             {scripts ? (
                                 scripts
                                     .filter((script) => script?.trim() !== "")
@@ -160,9 +213,9 @@ export function CallHistory({
                                         </div>
                                     ))
                             ) : (
-                                <div className="text-center text-gray-500 dark:text-gray-400">
+                                <div className="flex items-center justify-center">
                                     {loading ? (
-                                        <div className="flex items-center">
+                                        <div className="flex items-center mt-6">
                                             <svg
                                                 className="animate-spin h-5 w-5 mr-3 text-gray-900 dark:text-white"
                                                 xmlns="http://www.w3.org/2000/svg"
@@ -188,62 +241,24 @@ export function CallHistory({
                                             </span>
                                         </div>
                                     ) : (
-                                        <p>No transcription for this call</p>
+                                        <p className="text-center text-gray-500 dark:text-gray-400">
+                                            No transcription for this call
+                                        </p>
                                     )}
                                 </div>
                             )}
                         </div>
                     </div>
+                    <div className="mt-6 flex justify-end gap-x-4">
+                        <SecondaryButton
+                            className="dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-400"
+                            onClick={closeModal}
+                        >
+                            Close
+                        </SecondaryButton>
+                    </div>
                 </div>
-            ) : (
-                <div>
-                    {history.length > 0 ? (
-                        history.map((item, index) => (
-                            <button
-                                key={index}
-                                className="w-full flex items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left"
-                                onClick={() => onHistorySelect(item)}
-                            >
-                                <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mr-3">
-                                    {getCallIcon(item.type)}
-                                </div>
-                                <div className="flex-1">
-                                    <div className="font-medium text-gray-900 dark:text-white text-sm">
-                                        {getCallName(item)}
-                                        {item.type ==
-                                            CallHistoryTypeEnum.MISSED && (
-                                            <span className="text-red-500 dark:text-red-400">
-                                                {" "}
-                                                (Missed)
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        {item.type ==
-                                        CallHistoryTypeEnum.OUTBOUND
-                                            ? item?.CdrR?.orig_req_user
-                                            : item?.CdrR?.orig_sub}
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        {formatCallTime(item.time_release)}
-                                    </div>
-                                    {item.duration > 0 && (
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                                            {formatDuration(item.duration)}
-                                        </div>
-                                    )}
-                                </div>
-                            </button>
-                        ))
-                    ) : (
-                        <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                            No call history
-                        </div>
-                    )}
-                </div>
-            )}
+            </Modal>
         </div>
     );
 }
