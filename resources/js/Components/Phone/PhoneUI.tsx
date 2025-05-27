@@ -15,6 +15,7 @@ import {
 import Transcription, {
     TranscriptionComponentRef,
 } from "@/Components/Phone/Transcription";
+import { RTCSession } from "jssip/lib/RTCSession";
 
 interface PhoneUIProps {
     destination: string;
@@ -39,6 +40,7 @@ interface PhoneUIProps {
     remoteStream: MediaStream | null;
     isImCaller: boolean;
     caller: string;
+    currentSession: RTCSession | null;
 }
 
 export function PhoneUI({
@@ -54,6 +56,7 @@ export function PhoneUI({
     remoteStream,
     isImCaller,
     caller,
+    currentSession,
     setDestination,
     setCallDuration,
     toggleMute,
@@ -65,7 +68,6 @@ export function PhoneUI({
     transferCall,
     answerCall,
 }: PhoneUIProps) {
-    const [transcripts, setTranscripts] = useState<string[]>([""]);
     const transcriptionRef = useRef<TranscriptionComponentRef>(null);
 
     useEffect(() => {
@@ -226,7 +228,6 @@ export function PhoneUI({
                                     className="w-full mt-2 bg-red-600 hover:bg-red-500 text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
                                     onClick={() => {
                                         handleEndCall();
-                                        console.log("transcripts", transcripts);
                                     }}
                                 >
                                     <PhoneOff size={18} />
@@ -357,9 +358,9 @@ export function PhoneUI({
             <div className="mt-12 opacity-85">
                 <Transcription
                     ref={transcriptionRef}
+                    currentSession={currentSession}
                     isActiveCall={isActiveCall}
                     isImCaller={isImCaller}
-                    setTranscripts={setTranscripts}
                 />
             </div>
         </div>

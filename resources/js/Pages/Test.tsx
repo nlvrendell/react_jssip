@@ -72,7 +72,6 @@ export default function Welcome({
             console.log("call confirmed");
             if (session.connection) {
                 session.connection.addEventListener("track", (e: any) => {
-                    console.log("track", e);
                     const audio = document.createElement("audio");
                     audio.style.display = "none";
                     document.body.appendChild(audio);
@@ -103,7 +102,6 @@ export default function Welcome({
         });
 
         session.connection.addEventListener("track", (e: any) => {
-            console.log("track", e);
             const audio = document.createElement("audio");
             audio.style.display = "none";
             document.body.appendChild(audio);

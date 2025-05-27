@@ -7,7 +7,9 @@ export function call(
     setCurrentSession: (session: RTCSession | null) => void,
     setIsActiveCall: (isActiveCall: boolean) => void,
     setRemoteStream: (stream: MediaStream | null) => void,
-    fromDisplayName: string
+    fromDisplayName: string,
+    setDestination: (destination: string) => void,
+    fetchCallHistory: () => void
 ) {
     const session = ua.call(destinationSIP, {
         mediaConstraints: { audio: true, video: false },
@@ -15,18 +17,17 @@ export function call(
     });
 
     session.on("sending", function (e: any) {
-        console.log("sending", e);
+        console.log("sending");
     });
 
-    session.on("accepted", () => {
+    session.on("accepted", (e: any) => {
         console.log("Call accepted!");
     });
 
-    session.on("confirmed", () => {
+    session.on("confirmed", (e: any) => {
         console.log("call confirmed");
         if (session.connection) {
             session.connection.addEventListener("track", (e: any) => {
-                console.log("track", e);
                 const audio = document.createElement("audio");
                 audio.style.display = "none";
                 document.body.appendChild(audio);
@@ -47,16 +48,17 @@ export function call(
     });
 
     session.on("failed", function (e: any) {
-        console.log("call failed", e);
+        console.log("call failed");
     });
 
-    session.on("ended", () => {
+    session.on("ended", (e: any) => {
         setIsActiveCall(false);
-        console.log("Call ended!");
+        setDestination("");
+        fetchCallHistory();
+        console.log("caller call ended!", e.message?.call_id);
     });
 
     session.connection.addEventListener("track", (e: any) => {
-        console.log("track", e);
         const audio = document.createElement("audio");
         audio.style.display = "none";
         document.body.appendChild(audio);

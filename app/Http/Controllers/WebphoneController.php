@@ -30,7 +30,7 @@ class WebphoneController extends Controller
                 'deepgram_api_key' => config('connectware.deepgram_api_key'),
             ],
             'contacts' => $this->connectwareService->listContacts(),
-            'callHistory' => $this->connectwareService->listCallHistories(),
+            'callHistory' => fn () => $this->connectwareService->listCallHistories(),
             'parks' => $this->connectwareService->listParks(),
         ]);
     }

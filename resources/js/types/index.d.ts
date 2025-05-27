@@ -23,7 +23,7 @@ export interface Contact {
 }
 
 export interface CallHistoryItem {
-    cdr_id: string;
+    id: string;
     first_name: string;
     last_name: string;
     number: string;
@@ -31,5 +31,10 @@ export interface CallHistoryItem {
     time_release: string;
     type: "0" | "1" | "2"; // 0 = incoming, 1 = outgoing, 2 = missed
     duration: number;
-    CdrR: { orig_from_name: string; orig_sub: string; orig_req_user: string };
+    CdrR: {
+        orig_from_name: string;
+        orig_sub: string;
+        orig_req_user: string;
+        term_callid: string;
+    };
 }

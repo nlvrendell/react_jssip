@@ -15,7 +15,7 @@ import {
     CircleParking,
 } from "lucide-react";
 import { PhoneUI } from "@/Components/Phone/PhoneUI";
-import { Head, usePage } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import { createSipUA } from "@/utils";
 import JsSIP from "jssip";
 import { call } from "@/utils/phone";
@@ -24,6 +24,7 @@ import { Parks } from "@/Components/Phone/Parks";
 import { RTCSession } from "jssip/lib/RTCSession";
 
 export default function WebPhone() {
+    const page = usePage();
     const [destination, setDestination] = useState("");
     const [isRegistered, setIsRegistered] = useState(false);
     const [isActiveCall, setIsActiveCall] = useState(false);
@@ -41,10 +42,10 @@ export default function WebPhone() {
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [isImCaller, setIsImCaller] = useState(false);
     const [callHistory, setCallHistory] = useState(
-        usePage().props.callHistory as CallHistoryItem[]
+        page.props.callHistory as CallHistoryItem[]
     );
     const [caller, setCaller] = useState<string>("");
-    const config = usePage().props.config as {
+    const config = page.props.config as {
         domain: string;
         uri: string;
         password: string;
@@ -52,9 +53,8 @@ export default function WebPhone() {
         user_agent: string;
     };
 
-    const contacts = usePage().props.contacts as Contact[];
-
-    const authUser = usePage().props.auth.user as any;
+    const contacts = page.props.contacts as Contact[];
+    const authUser = page.props.auth.user as any;
 
     useEffect(() => {
         const uaConfig = {
@@ -127,7 +127,6 @@ export default function WebPhone() {
             }
 
             setIsActiveCall(true);
-
             const destinationSIP = `sip:${destination.trim()}@${config.domain}`;
 
             call(
@@ -136,7 +135,9 @@ export default function WebPhone() {
                 setCurrentSession,
                 setIsActiveCall,
                 setRemoteStream,
-                authUser.name
+                authUser.name,
+                setDestination,
+                fetchCallHistory
             );
 
             setIsImCaller(true);
@@ -154,7 +155,7 @@ export default function WebPhone() {
             );
 
             const newCall: CallHistoryItem = {
-                cdr_id: Date.now().toString(),
+                id: Date.now().toString(),
                 first_name: contact?.first_name || "",
                 last_name: contact?.last_name || "",
                 number: contact?.user || destination,
@@ -166,6 +167,7 @@ export default function WebPhone() {
                     orig_from_name: authUser?.name,
                     orig_sub: authUser?.meta.user,
                     orig_req_user: destination.trim(),
+                    term_callid: "",
                 },
             };
 
@@ -173,8 +175,10 @@ export default function WebPhone() {
         }
     };
 
-    const handleEndCall = () => {
+    const handleEndCall = (callId?: string) => {
+        var sessionId = "";
         if (currentSession && !currentSession.isEnded()) {
+            sessionId = currentSession.id?.slice(0, 53);
             currentSession.terminate();
         }
         setIsActiveCall(false);
@@ -189,7 +193,15 @@ export default function WebPhone() {
         setCallHistory((prev) => {
             const updated = [...prev];
             if (updated[0]) {
-                updated[0] = { ...updated[0], duration: callDuration };
+                updated[0] = {
+                    ...updated[0],
+                    duration: callDuration,
+                    id: sessionId ?? callId?.slice(0, 53),
+                    CdrR: {
+                        ...updated[0].CdrR,
+                        term_callid: sessionId ?? callId?.slice(0, 53),
+                    },
+                };
             }
             return updated;
         });
@@ -332,7 +344,7 @@ export default function WebPhone() {
             );
 
             const newCall: CallHistoryItem = {
-                cdr_id: Date.now().toString(),
+                id: currentSession.id?.slice(0, 53) ?? Date.now().toString(),
                 first_name: "",
                 last_name: "",
                 number: contact?.user || destination,
@@ -346,6 +358,7 @@ export default function WebPhone() {
                         : "Unknown",
                     orig_sub: destination.trim(),
                     orig_req_user: authUser?.meta.user,
+                    term_callid: currentSession.id?.slice(0, 53) ?? "",
                 },
             };
 
@@ -366,6 +379,16 @@ export default function WebPhone() {
         } else {
             alert("Please allow notifications to receive updates.");
         }
+    };
+
+    useEffect(() => {
+        setCallHistory(page.props.callHistory as CallHistoryItem[]);
+    }, [page.props.callHistory]);
+
+    const fetchCallHistory = () => {
+        router.reload({
+            only: ["callHistory"],
+        });
     };
 
     return (
@@ -516,6 +539,7 @@ export default function WebPhone() {
                         remoteStream={remoteStream}
                         isImCaller={isImCaller}
                         caller={caller}
+                        currentSession={currentSession}
                     />
                 </div>
             </div>

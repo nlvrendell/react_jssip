@@ -1,10 +1,12 @@
-import { usePage } from "@inertiajs/react";
+import { useForm, usePage } from "@inertiajs/react";
 import { forwardRef, useImperativeHandle, useState } from "react";
+import { RTCSession } from "jssip/lib/RTCSession";
+import { filterRedundantTranscripts } from "@/utils";
 
 export type TranscriptionComponentProps = {
-    setTranscripts?: (message: string[]) => void;
     isActiveCall?: boolean;
     isImCaller?: boolean;
+    currentSession: RTCSession | null;
 };
 
 // Define what functions will be exposed to the parent via ref
@@ -17,7 +19,7 @@ export type TranscriptionComponentRef = {
 const Transcription = forwardRef<
     TranscriptionComponentRef,
     TranscriptionComponentProps
->(({ setTranscripts, isActiveCall, isImCaller }, ref) => {
+>(({ isActiveCall, isImCaller, currentSession }, ref) => {
     const [socket, setSocket] = useState<WebSocket>();
     const [scripts, setScripts] = useState<string[]>([""]);
     const [microphone, setMicrophone] = useState<MediaRecorder>(
@@ -29,6 +31,9 @@ const Transcription = forwardRef<
         "",
     ]);
 
+    var currentLocalScript = "";
+    var currentRemoteScript = "";
+
     const [remoteSocket, setRemoteSocket] = useState<WebSocket>();
     const [remoteMicrophone, setRemoteMicrophone] = useState<MediaRecorder>(
         new MediaRecorder(new MediaStream())
@@ -37,8 +42,6 @@ const Transcription = forwardRef<
     const config = usePage().props.config as {
         deepgram_api_key: string;
     };
-
-    let currentStream: MediaStream;
 
     const initializeDeepgram = () => {
         navigator.mediaDevices
@@ -93,19 +96,15 @@ const Transcription = forwardRef<
 
                     if (
                         transcript &&
-                        currentTranscript != transcript &&
+                        currentLocalScript != transcript &&
                         isActiveCall
                     ) {
                         const labeledTranscript = `${speaker}: ${transcript}`;
+                        currentLocalScript = transcript;
 
-                        setCurrentTranscript(labeledTranscript);
-                        setScripts((prev) => [...prev, transcript]);
-
-                        if (
-                            scripts !== undefined &&
-                            setTranscripts !== undefined
-                        ) {
-                            setTranscripts(scripts);
+                        setCurrentTranscript(labeledTranscript); // to be shown as transcription below the webphone
+                        setScripts((prev) => [...prev, labeledTranscript]);
+                        if (scripts !== undefined) {
                             if (speaker == "Caller") {
                                 setScriptsFromCaller((prev) => [
                                     ...prev,
@@ -118,7 +117,6 @@ const Transcription = forwardRef<
                                 ]);
                             }
                         }
-                        console.log(labeledTranscript);
                     }
                 };
 
@@ -165,33 +163,39 @@ const Transcription = forwardRef<
 
             let speaker = isImCaller ? "Receiver" : "Caller";
 
-            if (transcript && currentTranscript != transcript && isActiveCall) {
+            if (
+                transcript &&
+                currentRemoteScript != transcript &&
+                isActiveCall
+            ) {
                 const labeledTranscript = `${speaker}: ${transcript}`;
+                currentRemoteScript = transcript;
 
-                setCurrentTranscript(labeledTranscript);
-                setScripts((prev) => [...prev, transcript]);
+                setCurrentTranscript(labeledTranscript); // to be shown as transcription below the webphone
+                setScripts((prev) => [...prev, labeledTranscript]);
 
-                if (scripts !== undefined && setTranscripts !== undefined) {
-                    setTranscripts(scripts);
+                if (scripts !== undefined) {
                     if (speaker == "Caller") {
                         setScriptsFromCaller((prev) => [...prev, transcript]);
                     } else {
                         setScriptsFromReceiver((prev) => [...prev, transcript]);
                     }
                 }
-                console.log(labeledTranscript);
+                // console.log(labeledTranscript);
             }
         };
 
         setRemoteSocket(newSocket);
     };
 
+    const transcriptForm = useForm({
+        session_id: "",
+        term_id: "",
+        transcripts: [] as string[],
+    });
+
     const stopRecording = () => {
-        console.log({
-            all: scripts.join(","),
-            scriptsFromCaller: scriptsFromCaller.join(","),
-            scriptsFromReceiver: scriptsFromReceiver.join(","),
-        });
+        var holdId = currentSession?.id;
 
         if (microphone && microphone.state === "recording") {
             microphone.stop();
@@ -215,10 +219,36 @@ const Transcription = forwardRef<
             console.log("Deepgram WebSocket closed.");
         }
 
+        let filteredTranscripts = filterRedundantTranscripts(scripts);
+        // save from db
+
+        if (currentSession) {
+            transcriptForm.data.session_id = holdId ?? "";
+            transcriptForm.data.term_id = holdId?.slice(0, 53) ?? "";
+            transcriptForm.data.transcripts = filteredTranscripts;
+
+            // console.log({
+            //     scripts: scripts,
+            //     filteredTranscripts: filteredTranscripts,
+            // });
+
+            if (
+                transcriptForm.data.session_id.length >= 53 &&
+                filteredTranscripts[0]
+            ) {
+                submitForm();
+            }
+        }
+
         setScripts([""]);
         setCurrentTranscript("");
     };
 
+    const submitForm = () => {
+        transcriptForm.submit("post", route("transcript.store"), {
+            only: ["callHistory"],
+        });
+    };
 
     useImperativeHandle(ref, () => ({
         initializeDeepgram,
