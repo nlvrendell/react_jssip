@@ -32,6 +32,7 @@ class WebphoneController extends Controller
             'contacts' => $this->connectwareService->listContacts(),
             'callHistory' => fn () => $this->connectwareService->listCallHistories(),
             'parks' => $this->connectwareService->listParks(),
+            'teams' => [...$this->connectwareService->listSites(), ...$this->connectwareService->listDepartments()],
         ]);
     }
 

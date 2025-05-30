@@ -250,7 +250,9 @@ export default function WebPhone() {
                     </div>
                 );
             case "teams":
-                return <Teams />;
+                return (
+                    <Teams contacts={contacts} onSelect={handleContactSelect} />
+                );
             case "settings":
                 return <Settings />;
             case "parks":

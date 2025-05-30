@@ -35,14 +35,27 @@ class ConnectwareService
         return $response->json();
     }
 
+    public function logout()
+    {
+        Auth::guard('web')->logout();
+
+        request()->session()->invalidate();
+
+        request()->session()->regenerateToken();
+
+        return Inertia::render('Auth/Login', [
+            'status' => 'Session Expired. Please login again',
+        ]);
+    }
+
     public function listDevices()
     {
         return $this->makeHttpRequest('', [
             'format' => 'json',
             'object' => 'device',
             'action' => 'read',
-            'domain' => auth()->user()->meta['domain'],
-            'user' => auth()->user()->meta['user'],
+            'domain' => request()->user()->meta['domain'],
+            'user' => request()->user()->meta['user'],
         ]);
     }
 
@@ -52,8 +65,8 @@ class ConnectwareService
             'format' => 'json',
             'object' => 'contact',
             'action' => 'read',
-            'domain' => auth()->user()->meta['domain'],
-            'user' => auth()->user()->meta['user'],
+            'domain' => request()->user()->meta['domain'],
+            'user' => request()->user()->meta['user'],
             'includeDomain' => 'yes',
         ]);
     }
@@ -64,7 +77,7 @@ class ConnectwareService
             'format' => 'json',
             'object' => 'cdr2',
             'action' => 'read',
-            'uid' => auth()->user()->connectware_id,
+            'uid' => request()->user()->connectware_id,
             'limit' => '50',
         ]);
     }
@@ -90,16 +103,23 @@ class ConnectwareService
         ]);
     }
 
-    public function logout()
+    public function listSites()
     {
-        Auth::guard('web')->logout();
+        return $this->makeHttpRequest('', [
+            'object' => 'site',
+            'action' => 'list',
+            'format' => 'json',
+            'domain' => request()->user()->meta['domain'],
+        ]);
+    }
 
-        request()->session()->invalidate();
-
-        request()->session()->regenerateToken();
-
-        return Inertia::render('Auth/Login', [
-            'status' => 'Session Expired. Please login again',
+    public function listDepartments()
+    {
+        return $this->makeHttpRequest('', [
+            'object' => 'department',
+            'action' => 'list',
+            'format' => 'json',
+            'domain' => request()->user()->meta['domain'],
         ]);
     }
 }
