@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-    Search,
-    Plus,
-    Users,
-    Eye,
-    ArrowLeft,
-} from "lucide-react";
+import { Search, Plus, Users, Eye, ArrowLeft } from "lucide-react";
 import { usePage } from "@inertiajs/react";
 import { Contact } from "@/types";
 
@@ -27,11 +21,15 @@ export function Teams({ contacts, onSelect }: TeamProps) {
 
     const countMembers = (team: string) => {
         let count = 0;
-        contacts.forEach((contact: any) => {
-            if (contact.site === team || contact.group === team) {
-                count++;
-            }
-        });
+        contacts
+            .filter((contact: any) => {
+                return contact.user != authUser.meta.user;
+            })
+            .forEach((contact: any) => {
+                if (contact.site === team || contact.group === team) {
+                    count++;
+                }
+            });
         return count;
     };
 
@@ -50,6 +48,8 @@ export function Teams({ contacts, onSelect }: TeamProps) {
         setIsViewing(true);
         setSelectedTeam(team);
     };
+
+    console.log("contacts", contacts);
 
     return (
         <div className="flex flex-col h-full">
@@ -115,9 +115,9 @@ export function Teams({ contacts, onSelect }: TeamProps) {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <button className="ml-2 p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors">
+                        {/* <button className="ml-2 p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors">
                             <Plus size={18} />
-                        </button>
+                        </button> */}
                     </div>
                     <div className="flex-1 overflow-y-auto">
                         <div className="divide-y divide-gray-200 dark:divide-gray-800">
